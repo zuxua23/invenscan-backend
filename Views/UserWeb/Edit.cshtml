@@ -1,0 +1,47 @@
+@using InvenScan.DTO.Response
+@model UserResponse
+@{ ViewData["Title"] = "Edit User"; }
+
+<div style="max-width:480px">
+    <a asp-controller="UserWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+    <div class="card p-4">
+        @if (ViewData["Error"] != null)
+        {
+            <div class="alert alert-danger py-2 small">@ViewData["Error"]</div>
+        }
+        <div class="mb-3">
+            <label class="form-label fw-semibold small">Username</label>
+            <input class="form-control" value="@Model.UserId" disabled />
+        </div>
+        <form asp-controller="UserWeb" asp-action="Edit" asp-route-userId="@Model.UserId" method="post">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Full Name</label>
+                <input name="FullName" class="form-control" value="@Model.FullName" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Role</label>
+                <select name="Role" class="form-select">
+                    @if (Model.Role == "OPERATOR") { <option value="OPERATOR" selected>OPERATOR</option> } else { <option value="OPERATOR">OPERATOR</option> }
+                    @if (Model.Role == "ADMIN") { <option value="ADMIN" selected>ADMIN</option> } else { <option value="ADMIN">ADMIN</option> }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Status</label>
+                <select name="IsActive" class="form-select">
+                    @if (Model.IsActive) { <option value="true" selected>Active</option> } else { <option value="true">Active</option> }
+                    @if (!Model.IsActive) { <option value="false" selected>Inactive</option> } else { <option value="false">Inactive</option> }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">New Password <span class="text-muted small">(leave blank to keep)</span></label>
+                <input name="NewPassword" type="password" class="form-control" placeholder="Enter new password to change" minlength="6" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-save me-1"></i>Update User
+            </button>
+        </form>
+    </div>
+</div>

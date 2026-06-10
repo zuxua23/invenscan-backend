@@ -1,0 +1,68 @@
+@using InvenScan.DTO.Response
+@model List<ItemResponse>
+@{ ViewData["Title"] = "Items"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div></div>
+    @if (User.IsInRole("ADMIN"))
+    {
+        <a asp-controller="ItemWeb" asp-action="Create" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Add Item
+        </a>
+    }
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table id="itemTable" class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Item Code</th>
+                    <th>Item Name</th>
+                    <th>Unit</th>
+                    <th>Min Stock</th>
+                    <th>Created</th>
+                    @if (User.IsInRole("ADMIN"))
+                    {
+                        <th style="width:120px">Actions</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td><code>@item.ItemCode</code></td>
+                        <td>@item.ItemName</td>
+                        <td>@item.Unit</td>
+                        <td>@item.MinStock</td>
+                        <td class="text-muted small">@item.CreatedAt.ToString("yyyy-MM-dd")</td>
+                        @if (User.IsInRole("ADMIN"))
+                        {
+                            <td>
+                                <a asp-controller="ItemWeb" asp-action="Edit" asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-outline-secondary py-0">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form asp-controller="ItemWeb" asp-action="Delete" asp-route-id="@item.Id"
+                                      method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete @item.ItemCode?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () { $('#itemTable').DataTable({ pageLength: 25 }); });
+    </script>
+}

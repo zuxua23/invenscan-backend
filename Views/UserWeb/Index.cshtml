@@ -1,0 +1,66 @@
+@using InvenScan.DTO.Response
+@model List<UserResponse>
+@{ ViewData["Title"] = "Users"; }
+
+<div class="d-flex justify-content-end mb-3">
+    <a asp-controller="UserWeb" asp-action="Create" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>Add User
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table id="userTable" class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Full Name</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th style="width:80px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td><code>@user.UserId</code></td>
+                        <td>@user.FullName</td>
+                        <td>
+                            @if (user.Role == "ADMIN")
+                            {
+                                <span class="badge bg-danger">ADMIN</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">OPERATOR</span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.IsActive)
+                            {
+                                <span class="badge bg-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactive</span>
+                            }
+                        </td>
+                        <td class="text-muted small">@user.CreatedAt.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <a asp-controller="UserWeb" asp-action="Edit" asp-route-userId="@user.UserId"
+                               class="btn btn-sm btn-outline-secondary py-0">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function () { $('#userTable').DataTable({ pageLength: 25 }); });</script>
+}

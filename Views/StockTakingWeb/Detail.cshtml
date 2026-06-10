@@ -1,0 +1,102 @@
+@using InvenScan.DTO.Response
+@model List<StockTakingDetailResponse>
+@{
+    var session = ViewData["Session"] as StockTakingResponse;
+    ViewData["Title"] = $"Session {session?.SessionCode}";
+}
+
+<a asp-controller="StockTakingWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
+    <i class="bi bi-arrow-left me-1"></i>Back
+</a>
+
+@if (session != null)
+{
+    <div class="card p-3 mb-3">
+        <div class="row g-2">
+            <div class="col-auto">
+                <span class="text-muted small">Session Code</span>
+                <div class="fw-bold"><code>@session.SessionCode</code></div>
+            </div>
+            <div class="col-auto">
+                <span class="text-muted small">Status</span>
+                <div>
+                    @if (session.Status == "OPEN")
+                    {
+                        <span class="badge bg-success">OPEN</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">CLOSED</span>
+                    }
+                </div>
+            </div>
+            <div class="col-auto">
+                <span class="text-muted small">Total Items</span>
+                <div class="fw-bold">@session.TotalItems</div>
+            </div>
+            <div class="col-auto">
+                <span class="text-muted small">Scanned</span>
+                <div class="fw-bold text-success">@session.ScannedItems</div>
+            </div>
+            <div class="col-auto">
+                <span class="text-muted small">Missing</span>
+                <div class="fw-bold text-danger">@session.MissingItems</div>
+            </div>
+            <div class="col-auto">
+                <span class="text-muted small">Remark</span>
+                <div class="text-muted">@(string.IsNullOrWhiteSpace(session.Remark) ? "-" : session.Remark)</div>
+            </div>
+            <div class="col-auto">
+                <span class="text-muted small">Created</span>
+                <div class="text-muted small">@session.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="card">
+    <div class="card-body p-0">
+        <table id="detailTable" class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>EPC Tag</th>
+                    <th>Item Code</th>
+                    <th>Item Name</th>
+                    <th>Location</th>
+                    <th>Action</th>
+                    <th>Scanned At</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in Model)
+                {
+                    <tr>
+                        <td><code class="small">@d.EpcTag</code></td>
+                        <td><code>@d.ItemCode</code></td>
+                        <td>@d.ItemName</td>
+                        <td class="text-muted small">@d.LocationCode — @d.LocationName</td>
+                        <td>
+                            @switch (d.Action)
+                            {
+                                case "SCAN":
+                                    <span class="badge bg-success">SCAN</span>
+                                    break;
+                                case "MISSING":
+                                    <span class="badge bg-danger">MISSING</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-light text-secondary border">SYSTEM</span>
+                                    break;
+                            }
+                        </td>
+                        <td class="text-muted small">@(d.ScannedAt?.ToString("HH:mm:ss") ?? "-")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function () { $('#detailTable').DataTable({ pageLength: 50 }); });</script>
+}

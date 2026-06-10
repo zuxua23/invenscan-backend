@@ -1,0 +1,340 @@
+{
+  "info": {
+    "name": "InvenScan API",
+    "description": "InvenScan — Inventory Management System API Collection\n\nBase URL: {{baseUrl}}\nAuth: Bearer JWT token (get from /api/auth/login)\n\nDefault credentials:\n- Admin: admin / admin123\n- Operator: operator1 / operator123",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000", "type": "string" },
+    { "key": "token", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Ping",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/ping",
+            "description": "Health check — no auth required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.success && json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('token', json.data.token);",
+                  "  console.log('Token saved.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "description": "Authenticate and get JWT token. Token is auto-saved to collection variable."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Items",
+      "item": [
+        {
+          "name": "Get All Items",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/item",
+            "description": "Get all active items."
+          }
+        },
+        {
+          "name": "Get Item By ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/item/1",
+            "description": "Get item detail by ID."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Locations",
+      "item": [
+        {
+          "name": "Get All Locations",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/location",
+            "description": "Get all active locations."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tags",
+      "item": [
+        {
+          "name": "Get Tag By Identifier",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/tag/E200000000001",
+            "description": "Get tag detail by EPC or TagId."
+          }
+        },
+        {
+          "name": "Register Tags",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/tag/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tags\": [\n    {\n      \"tagId\": \"TAG-001\",\n      \"epcTag\": \"E200000000001\",\n      \"itemId\": 1,\n      \"locationId\": 1\n    },\n    {\n      \"tagId\": \"TAG-002\",\n      \"epcTag\": \"E200000000002\",\n      \"itemId\": 2,\n      \"locationId\": 1\n    }\n  ]\n}"
+            },
+            "description": "Register one or more RFID tags. Admin only."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stock In",
+      "item": [
+        {
+          "name": "Lookup By RFID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/stockin?code=E200000000001&scannerType=RFID",
+              "query": [
+                { "key": "code", "value": "E200000000001" },
+                { "key": "scannerType", "value": "RFID" }
+              ]
+            },
+            "description": "Lookup item info by EPC tag for RFID scan."
+          }
+        },
+        {
+          "name": "Lookup By Barcode",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/stockin?code=ITM-001&scannerType=BARCODE",
+              "query": [
+                { "key": "code", "value": "ITM-001" },
+                { "key": "scannerType", "value": "BARCODE" }
+              ]
+            },
+            "description": "Lookup item info by ItemCode for barcode scan."
+          }
+        },
+        {
+          "name": "Submit Stock In",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/stockin",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"locationId\": 1,\n  \"notes\": \"Received from supplier\",\n  \"items\": [\n    {\n      \"tagId\": 1,\n      \"itemId\": 1,\n      \"scannedCode\": \"E200000000001\",\n      \"scanType\": \"RFID\"\n    },\n    {\n      \"tagId\": null,\n      \"itemId\": 2,\n      \"scannedCode\": \"ITM-002\",\n      \"scanType\": \"BARCODE\"\n    }\n  ]\n}"
+            },
+            "description": "Submit a stock-in transaction."
+          }
+        },
+        {
+          "name": "Bulk Info",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/stockin/bulk-info",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codes\": [\"E200000000001\", \"E200000000002\"],\n  \"scannerType\": \"RFID\"\n}"
+            },
+            "description": "Bulk lookup multiple scan codes at once."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stock Taking",
+      "item": [
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/stock-taking",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remark\": \"Monthly stock check Q1 2026\"\n}"
+            },
+            "description": "Create a new stock taking session. Admin only."
+          }
+        },
+        {
+          "name": "Get All Sessions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stock-taking",
+            "description": "Get all stock taking sessions."
+          }
+        },
+        {
+          "name": "Get Active Session",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stock-taking/active",
+            "description": "Get currently open session (used by Android on startup)."
+          }
+        },
+        {
+          "name": "Get Session Tags",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stock-taking/tags/1",
+            "description": "Get all expected items in a session."
+          }
+        },
+        {
+          "name": "Get Available Tags",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stock-taking/available-tags/1",
+            "description": "Get IN_STOCK tags not yet included in this session."
+          }
+        },
+        {
+          "name": "Operator Submit",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/stock-taking/operator-submit",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sttId\": 1,\n  \"scannedEpcs\": [\"E200000000001\", \"E200000000002\"],\n  \"operatorId\": \"operator1\"\n}"
+            },
+            "description": "Submit scan results from handheld device. Tags not in scannedEpcs → MISSING."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stock Prep",
+      "item": [
+        {
+          "name": "Get Open Documents",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stockprep",
+            "description": "Get all OPEN or IN_PROGRESS picking lists."
+          }
+        },
+        {
+          "name": "Get Document Detail",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stockprep/1",
+            "description": "Get picking list detail with all items."
+          }
+        },
+        {
+          "name": "Bulk Pick Submit",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/stockprep/bulk",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stockPrepId\": 1,\n  \"scannedItems\": [\n    {\n      \"detailId\": 1,\n      \"scannedCode\": \"E200000000001\",\n      \"scanType\": \"RFID\"\n    }\n  ],\n  \"operatorId\": \"operator1\"\n}"
+            },
+            "description": "Submit picked items from handheld device."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search Item",
+      "item": [
+        {
+          "name": "Get All Items With Tags",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/search-item",
+            "description": "Get all items with tag info — used for device cache sync."
+          }
+        },
+        {
+          "name": "Search By Code",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/search-item/ITM-001",
+            "description": "Search item by ItemCode or EPC tag."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/user",
+            "description": "Get all users. Admin only."
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/user",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"operator2\",\n  \"fullName\": \"Operator Two\",\n  \"password\": \"operator123\",\n  \"role\": \"OPERATOR\"\n}"
+            },
+            "description": "Create a new user. Admin only."
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/user/operator2",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Operator Two Updated\",\n  \"role\": \"OPERATOR\",\n  \"isActive\": true,\n  \"newPassword\": null\n}"
+            },
+            "description": "Update user details. Admin only. Pass newPassword to reset password."
+          }
+        }
+      ]
+    }
+  ]
+}

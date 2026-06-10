@@ -1,0 +1,43 @@
+@using InvenScan.Entity
+@model Item
+@{ ViewData["Title"] = "Edit Item"; }
+
+<div style="max-width:560px">
+    <a asp-controller="ItemWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+    <div class="card p-4">
+        @if (ViewData["Error"] != null)
+        {
+            <div class="alert alert-danger py-2 small">@ViewData["Error"]</div>
+        }
+        <form asp-controller="ItemWeb" asp-action="Edit" asp-route-id="@Model.Id" method="post">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Item Code <span class="text-danger">*</span></label>
+                <input name="ItemCode" class="form-control" value="@Model.ItemCode" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Item Name <span class="text-danger">*</span></label>
+                <input name="ItemName" class="form-control" value="@Model.ItemName" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Description</label>
+                <textarea name="Description" class="form-control" rows="2">@Model.Description</textarea>
+            </div>
+            <div class="row">
+                <div class="col-6 mb-3">
+                    <label class="form-label fw-semibold small">Unit</label>
+                    <input name="Unit" class="form-control" value="@Model.Unit" />
+                </div>
+                <div class="col-6 mb-3">
+                    <label class="form-label fw-semibold small">Min Stock</label>
+                    <input name="MinStock" type="number" class="form-control" value="@Model.MinStock" min="0" />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-save me-1"></i>Update Item
+            </button>
+        </form>
+    </div>
+</div>

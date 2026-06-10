@@ -1,0 +1,66 @@
+@using InvenScan.DTO.Response
+@model List<StockPrepResponse>
+@{ ViewData["Title"] = "Stock Prep"; }
+
+<div class="d-flex justify-content-end mb-3">
+    @if (User.IsInRole("ADMIN"))
+    {
+        <a asp-controller="StockPrepWeb" asp-action="Create" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Create Picking List
+        </a>
+    }
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table id="prepTable" class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Doc Number</th>
+                    <th>Notes</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Picked</th>
+                    <th>Created</th>
+                    <th style="width:80px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var doc in Model)
+                {
+                    <tr>
+                        <td><code>@doc.DocNumber</code></td>
+                        <td class="text-muted">@doc.Notes</td>
+                        <td>
+                            @switch (doc.Status)
+                            {
+                                case "OPEN":
+                                    <span class="badge bg-primary">OPEN</span>
+                                    break;
+                                case "IN_PROGRESS":
+                                    <span class="badge bg-warning text-dark">IN PROGRESS</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-success">DONE</span>
+                                    break;
+                            }
+                        </td>
+                        <td>@doc.TotalItems</td>
+                        <td>@doc.PickedItems / @doc.TotalItems</td>
+                        <td class="text-muted small">@doc.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>
+                            <a asp-controller="StockPrepWeb" asp-action="Detail" asp-route-id="@doc.Id"
+                               class="btn btn-sm btn-outline-primary py-0">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function () { $('#prepTable').DataTable({ order: [[5, 'desc']], pageLength: 25 }); });</script>
+}
