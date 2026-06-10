@@ -1,3 +1,752 @@
+# CLAUDE.md — Multi-Agent Team Config
+
+## 🧠 Agent Team
+
+| Agent | Model | Role |
+|-------|-------|------|
+| 🟡 SONNET | `claude-sonnet-4-6` | UI, analyst, daily coding, boilerplate |
+| 🔵 OPUS | `claude-opus-4-8` | Complex logic, review, debugging lintas layer |
+| 🔴 FABLE | `claude-fable-5` | Architecture, last resort (sparingly!) |
+
+### Ratio Target
+- SONNET: ~80% tasks
+- OPUS: ~15% tasks
+- FABLE: ~5% tasks max
+
+### Auto Escalation Rules
+- SONNET gagal / output ga memuaskan 2x → eskalasi ke OPUS
+- OPUS gagal 2x → eskalasi ke FABLE
+- FABLE solve → handoff solution ke SONNET untuk finalisasi
+
+---
+
+## 🔄 Universal Workflow (semua stack)
+
+```
+START
+  │
+  ▼
+[FABLE] System architecture + ERD + API design + modul breakdown
+  │
+  ▼
+[SONNET] Project setup + base structure + boilerplate
+  │
+  ▼
+[SONNET] Implement fitur (loop per fitur)
+  │
+  ├── Straightforward → done ✅
+  └── Complex / stuck →
+        [OPUS] Debug / implement complex part
+          │
+          ├── Solved → done ✅
+          └── Still stuck →
+                [FABLE] Solve → handoff ke SONNET → done ✅
+  │
+  ▼
+[OPUS] Pre-commit review (security + quality check)
+  │
+  ▼
+DONE ✅
+```
+
+---
+
+## 🔒 Security Standards (WAJIB semua stack)
+
+Setiap baris kode yang ditulis HARUS mengikuti rules ini tanpa terkecuali.
+Jangan pernah skip security untuk alasan "nanti aja" atau "ini cuma dev".
+
+### Input & Validation
+- Semua input dari user/client WAJIB divalidasi di server side
+- Whitelist approach: tolak semua yang tidak diizinkan secara eksplisit
+- Jangan pernah trust data dari client: header, cookie, query param, body
+- Sanitize semua input sebelum diproses (strip HTML, escape special chars)
+- Validate tipe data, panjang, format, dan range di setiap field
+
+### Injection Prevention
+- WAJIB parameterized query / prepared statement — TIDAK BOLEH string concatenation untuk SQL
+- WAJIB escape output ke HTML untuk mencegah XSS
+- Hindari eval(), exec(), system() kecuali benar-benar diperlukan dan input sudah disanitasi
+- Android: jangan gunakan WebView.loadUrl() dengan input user tanpa sanitasi
+
+### Authentication & Authorization
+- Password WAJIB di-hash dengan bcrypt / Argon2 (minimum cost factor 12)
+- JANGAN simpan password plain text atau MD5/SHA1
+- JWT: gunakan secret key yang kuat (min 256-bit), set expiry yang wajar
+- Refresh token harus disimpan di httpOnly cookie, bukan localStorage
+- Setiap endpoint WAJIB ada authorization check — jangan andalkan frontend
+- Implement rate limiting di endpoint auth (login, register, forgot password)
+- Multi-factor authentication untuk endpoint sensitif jika memungkinkan
+
+### Data Protection
+- Semua komunikasi WAJIB HTTPS / TLS 1.2+
+- Data sensitif di database WAJIB dienkripsi (PII, nomor kartu, dll)
+- Jangan log data sensitif (password, token, nomor kartu, dsb)
+- Android: jangan simpan data sensitif di SharedPreferences tanpa enkripsi — gunakan EncryptedSharedPreferences
+- API key / secret WAJIB di environment variable, TIDAK BOLEH hardcode di kode
+- File .env WAJIB masuk .gitignore
+
+### API Security
+- Implement CORS yang ketat — whitelist origin yang diizinkan
+- Semua response API jangan expose stack trace atau detail error internal ke client
+- Gunakan response wrapper yang konsisten: `{ success, data, message }` — jangan expose nama tabel/kolom DB
+- Implement request size limit untuk mencegah payload flooding
+- Versioning API (/api/v1/) untuk backward compatibility
+- Audit log untuk operasi sensitif (login, delete, update data penting)
+
+### Dependency & Supply Chain
+- Selalu gunakan versi library yang aktif di-maintain
+- Jangan gunakan library yang sudah deprecated atau abandoned
+- Lock versi dependency (package-lock.json, composer.lock, go.sum, Podfile.lock)
+- Scan dependency vulnerability secara berkala
+
+### Stack-Specific Security
+
+**Android:**
+- ProGuard / R8 wajib aktif di release build
+- Jangan izinkan backup aplikasi jika menyimpan data sensitif (`android:allowBackup="false"`)
+- Certificate pinning untuk API calls production
+- Root detection jika aplikasi menangani data sensitif
+- Jangan hardcode URL, API key, atau secret di kode — gunakan BuildConfig / local.properties
+- Validasi deep link / intent data sebelum diproses
+
+**Laravel:**
+- CSRF protection wajib aktif
+- Gunakan Laravel Policy untuk authorization, bukan cek manual di controller
+- Mass assignment protection: selalu definisikan `$fillable` atau `$guarded`
+- Query Eloquent: hindari `->where(request()->all())` langsung
+- File upload: validasi MIME type di server, simpan di luar public/, rename file
+
+**Next.js / React:**
+- Semua secret WAJIB di server side — jangan expose ke client (NEXT_PUBLIC_ hanya untuk non-secret)
+- Sanitasi input sebelum render ke DOM (DOMPurify jika perlu render HTML)
+- Content Security Policy (CSP) header
+- Validasi ulang di server action / API route meskipun sudah validasi di frontend
+
+**ASP.NET Core:**
+- Aktifkan HTTPS redirection middleware
+- Gunakan Data Protection API untuk enkripsi data sensitif
+- Anti-forgery token untuk form submission
+- Aktifkan security headers: X-Frame-Options, X-Content-Type-Options, HSTS
+
+**Golang:**
+- Gunakan `html/template` bukan `text/template` untuk output HTML
+- Validasi semua struct dari request menggunakan library validator
+- Hindari goroutine leak — pastikan semua goroutine punya exit condition
+
+**Flutter:**
+- Jangan simpan token di plain storage — gunakan flutter_secure_storage
+- Obfuscate release build (`--obfuscate --split-debug-info`)
+- Validate SSL certificate — jangan bypass di production
+
+---
+
+## 🧹 Code Quality Standards (WAJIB semua stack)
+
+### Tidak Ada Komentar di Kode
+- DILARANG menulis komentar `// ini untuk login`, `// ambil data`, dsb
+- Kode harus self-explanatory melalui penamaan yang baik
+- Satu-satunya komentar yang boleh ada:
+  - Dokumentasi public API / fungsi publik (JSDoc, KDoc, XML doc)
+  - Penjelasan algoritma non-obvious yang kompleks (bukan "apa", tapi "kenapa")
+  - TODO yang sudah pasti ada tiket/issue-nya: `// TODO(#123): ...`
+
+### Penamaan yang Jelas dan Konsisten
+- Nama variabel, fungsi, class harus menjelaskan apa isinya / apa yang dilakukan
+- DILARANG: `data`, `temp`, `val`, `x`, `y`, `str`, `obj`, `result` sebagai nama final
+- Gunakan nama yang spesifik: `userAccessToken`, `fetchStockItemById`, `isRfidScannerReady`
+- Konsisten dalam satu codebase: kalau pakai `fetch` jangan campurkan dengan `get` untuk hal yang sama
+- Boolean: prefix `is`, `has`, `can`, `should` — contoh: `isLoading`, `hasPermission`
+- Koleksi: nama plural — `users`, `stockItems`, `scannedTags`
+
+### Struktur & Organisasi File
+- Satu file = satu tanggung jawab utama
+- Ukuran file: maksimal 300 baris — kalau lebih, pecah jadi modul/class terpisah
+- Ukuran fungsi: maksimal 30 baris — kalau lebih, ekstrak ke fungsi helper
+- Grouping yang konsisten dalam satu file: imports → constants → types → functions → exports
+- Folder structure harus mencerminkan domain, bukan tipe file
+
+### Clean Code Principles
+- DRY (Don't Repeat Yourself): kalau kode yang sama muncul 2x, ekstrak jadi fungsi/helper
+- Single Responsibility: satu fungsi melakukan satu hal
+- Fail fast: validasi dan return error di awal fungsi, bukan nested if berlapis
+- Hindari nested callback / deeply nested if — gunakan early return pattern
+- Jangan biarkan dead code (kode yang tidak pernah dipanggil) — hapus saja
+- Magic number DILARANG — semua angka dan string literal ke constant
+
+### Error Handling
+- Setiap error WAJIB di-handle secara eksplisit — jangan swallow exception dengan catch kosong
+- Error message harus informatif untuk developer, tapi generik untuk user
+- Gunakan custom exception / error types untuk domain error yang spesifik
+- Log semua error dengan context yang cukup (request id, user id, timestamp)
+
+### Maintainability
+- Setiap fungsi publik WAJIB punya unit test minimal happy path + 1 edge case
+- Interface / contract didefinisikan sebelum implementasi
+- Dependency injection — jangan instantiate dependency langsung di dalam class
+- Konfigurasi environment di satu tempat (config file / env), bukan tersebar di mana-mana
+- Breaking change di API selalu diversion (`/v2/`) — jangan ubah contract yang sudah ada
+
+---
+
+## 📋 Prompt Templates
+
+### ── ANDROID (Kotlin/Compose) ──────────────────────────────
+
+```
+[NEW APP — ANDROID]
+
+App: [nama aplikasi]
+Deskripsi: [apa yang dilakukan app ini]
+
+Fitur:
+- [fitur 1]
+- [fitur 2]
+- [fitur 3]
+
+Tech Stack:
+- Android: Kotlin + Jetpack Compose
+- Backend: [ASP.NET Core / Laravel / Node.js / dst]
+- Database lokal: Room DB
+- Networking: Retrofit
+- Auth: [JWT / Firebase Auth / dst]
+- Extra: [RFID Denso SP1 / CameraX ML Kit / Firebase / dst]
+
+Jalankan workflow ini TANPA nunggu konfirmasi, berurutan:
+
+PHASE 1 — ARCHITECTURE
+1. System architecture overview (layer diagram)
+2. ERD lengkap semua tabel
+3. API endpoint list (method, path, request, response)
+4. Breakdown modul + urutan pengerjaan
+5. Simpan ke docs/architecture.md
+
+PHASE 2 — PROJECT SETUP
+1. Struktur folder MVVM + Repository pattern
+2. Base classes: BaseActivity, BaseViewModel, BaseRepository
+3. Setup Retrofit + Auth interceptor + error handler + certificate pinning
+4. Setup Room DB + TypeConverters
+5. Setup Hilt (Dependency Injection)
+6. Setup Compose Navigation
+7. Setup EncryptedSharedPreferences untuk data sensitif
+8. ProGuard rules untuk release
+9. Simpan ke docs/setup.md
+
+PHASE 3 — IMPLEMENT
+Implement fitur pertama dari breakdown secara end-to-end:
+- UI (Jetpack Compose)
+- ViewModel + StateFlow
+- Repository + Room DAO
+- API endpoint (jika fullstack)
+
+Pastikan semua kode mengikuti Security Standards dan Code Quality Standards di CLAUDE.md.
+Mulai sekarang.
+```
+
+---
+
+### ── ANDROID + HARDWARE SDK ─────────────────────────────────
+
+```
+[NEW APP — ANDROID + HARDWARE]
+
+App: [nama aplikasi]
+Hardware: [Denso SP1 / BHT-M80 / Zebra / Honeywell / dst]
+SDK: [nama SDK + versi jika ada]
+
+Fitur:
+- [fitur 1]
+- [fitur 2]
+
+Tech Stack:
+- Android: Kotlin + [Compose / XML]
+- Hardware SDK: [nama SDK]
+- Backend: [stack backend]
+- Database lokal: Room DB
+- Sync: WorkManager (offline-first)
+
+Jalankan workflow ini TANPA nunggu konfirmasi:
+
+PHASE 1 — ARCHITECTURE
+1. Hardware integration architecture (SDK flow diagram)
+2. Offline-first sync strategy (local DB → queue → API)
+3. ERD + API endpoint list
+4. Breakdown modul + urutan pengerjaan
+5. Simpan ke docs/architecture.md
+
+PHASE 2 — PROJECT SETUP
+1. Struktur folder + base classes
+2. SDK singleton setup ([NamaSDK]Manager)
+3. Setup Room DB + WorkManager sync
+4. Setup Retrofit + interceptor + certificate pinning
+5. EncryptedSharedPreferences untuk token/config sensitif
+6. ProGuard rules
+7. Simpan ke docs/setup.md
+
+PHASE 3 — IMPLEMENT
+Implement fitur scan pertama end-to-end:
+- SDK init + scan callback
+- Simpan hasil scan ke Room
+- Queue sync ke API via WorkManager
+- UI feedback (banner / snackbar)
+
+Pastikan semua kode mengikuti Security Standards dan Code Quality Standards di CLAUDE.md.
+Mulai sekarang.
+```
+
+---
+
+### ── WEB FULLSTACK (Laravel) ────────────────────────────────
+
+```
+[NEW APP — LARAVEL FULLSTACK]
+
+App: [nama aplikasi]
+Deskripsi: [deskripsi singkat]
+
+Fitur:
+- [fitur 1]
+- [fitur 2]
+- [fitur 3]
+
+Tech Stack:
+- Backend: Laravel [versi]
+- Frontend: [Blade + Alpine.js / Inertia + Vue / Livewire]
+- Database: [MySQL / PostgreSQL]
+- Auth: [Breeze / Sanctum / Passport]
+- Extra: [Queue / Scheduler / Storage / dst]
+
+Jalankan workflow ini TANPA nunggu konfirmasi:
+
+PHASE 1 — ARCHITECTURE
+1. System architecture + MVC flow
+2. ERD lengkap
+3. Route list (method, URI, controller, middleware)
+4. Breakdown modul + urutan pengerjaan
+5. Simpan ke docs/architecture.md
+
+PHASE 2 — PROJECT SETUP
+1. Setup Laravel project + env config
+2. Migration semua tabel dari ERD
+3. Model + relationship + $fillable (mass assignment protection)
+4. Base Controller + API response wrapper
+5. Auth setup + rate limiting pada auth routes
+6. CORS config yang ketat
+7. Global error handler (jangan expose stack trace ke client)
+8. Simpan ke docs/setup.md
+
+PHASE 3 — IMPLEMENT
+Implement modul pertama end-to-end:
+- Migration + Model + Seeder
+- Controller (index, store, show, update, destroy)
+- Form Request validation
+- Policy untuk authorization
+- Route + middleware
+
+Pastikan semua kode mengikuti Security Standards dan Code Quality Standards di CLAUDE.md.
+Mulai sekarang.
+```
+
+---
+
+### ── WEB FULLSTACK (Next.js) ────────────────────────────────
+
+```
+[NEW APP — NEXT.JS FULLSTACK]
+
+App: [nama aplikasi]
+Deskripsi: [deskripsi singkat]
+
+Fitur:
+- [fitur 1]
+- [fitur 2]
+- [fitur 3]
+
+Tech Stack:
+- Frontend: Next.js [versi] + TypeScript
+- Styling: [Tailwind CSS / shadcn/ui / MUI]
+- Backend: [Next.js API Routes / terpisah]
+- Database: [PostgreSQL / MySQL / MongoDB]
+- ORM: [Prisma / Drizzle]
+- Auth: [NextAuth / Clerk / Supabase Auth]
+- State: [Zustand / Redux Toolkit / React Query]
+- Extra: [Supabase / Firebase / Cloudinary / dst]
+
+Jalankan workflow ini TANPA nunggu konfirmasi:
+
+PHASE 1 — ARCHITECTURE
+1. App architecture (App Router structure)
+2. ERD / data model
+3. API routes list (path, method, request, response)
+4. Component tree overview
+5. Breakdown modul + urutan pengerjaan
+6. Simpan ke docs/architecture.md
+
+PHASE 2 — PROJECT SETUP
+1. Struktur folder (app/, components/, lib/, hooks/, types/)
+2. Setup Prisma / Drizzle + database connection
+3. Setup Auth
+4. Base components: Layout, Navbar, Sidebar, Loading, Error
+5. Setup API handler + error middleware
+6. Security headers (next.config.js): CSP, X-Frame-Options, HSTS
+7. Input validation library (zod) setup
+8. Simpan ke docs/setup.md
+
+PHASE 3 — IMPLEMENT
+Implement modul pertama end-to-end:
+- Database schema + migration
+- API route dengan validation (zod) + authorization check
+- React hooks / server actions
+- UI page + components
+- Loading + error state
+
+Pastikan semua kode mengikuti Security Standards dan Code Quality Standards di CLAUDE.md.
+Mulai sekarang.
+```
+
+---
+
+### ── WEB FULLSTACK (ASP.NET Core) ───────────────────────────
+
+```
+[NEW APP — ASP.NET CORE]
+
+App: [nama aplikasi]
+Deskripsi: [deskripsi singkat]
+
+Fitur:
+- [fitur 1]
+- [fitur 2]
+- [fitur 3]
+
+Tech Stack:
+- Backend: ASP.NET Core [versi] (API / MVC)
+- Database: [SQL Server / PostgreSQL]
+- ORM: Entity Framework Core
+- Auth: [JWT Bearer / Identity / Azure AD]
+- Frontend: [React / Next.js / Razor + Alpine.js]
+- Extra: [SignalR / Hangfire / dst]
+
+Jalankan workflow ini TANPA nunggu konfirmasi:
+
+PHASE 1 — ARCHITECTURE
+1. Clean architecture layer diagram
+2. ERD + database schema
+3. API endpoint list (controller, action, method, route)
+4. Breakdown modul + urutan pengerjaan
+5. Simpan ke docs/architecture.md
+
+PHASE 2 — PROJECT SETUP
+1. Struktur folder clean architecture (API, Application, Domain, Infrastructure)
+2. DbContext + Entity base classes
+3. Migration awal dari ERD
+4. Base repository + unit of work pattern
+5. JWT auth middleware + refresh token
+6. Global error handler (ProblemDetails, jangan expose stack trace)
+7. Response wrapper konsisten
+8. Rate limiting middleware
+9. Security headers middleware
+10. Simpan ke docs/setup.md
+
+PHASE 3 — IMPLEMENT
+Implement modul pertama end-to-end:
+- Entity + Migration
+- Repository + Service
+- Controller + DTOs
+- Validation (FluentValidation)
+
+Pastikan semua kode mengikuti Security Standards dan Code Quality Standards di CLAUDE.md.
+Mulai sekarang.
+```
+
+---
+
+### ── BACKEND API ONLY (Golang) ──────────────────────────────
+
+```
+[NEW APP — GOLANG REST API]
+
+App: [nama service]
+Deskripsi: [deskripsi singkat]
+
+Endpoints:
+- [resource 1]: CRUD
+- [resource 2]: [operasi spesifik]
+
+Tech Stack:
+- Go [versi]
+- Framework: [Gin / Echo / Fiber]
+- Database: [PostgreSQL / MySQL]
+- ORM: [GORM / sqlx]
+- Auth: JWT
+- Extra: [Redis / RabbitMQ / gRPC / dst]
+
+Jalankan workflow ini TANPA nunggu konfirmasi:
+
+PHASE 1 — ARCHITECTURE
+1. Service architecture
+2. Database schema / ERD
+3. API endpoint list lengkap
+4. Breakdown + urutan pengerjaan
+5. Simpan ke docs/architecture.md
+
+PHASE 2 — PROJECT SETUP
+1. Struktur folder (cmd/, internal/, pkg/)
+2. Database connection + migration
+3. Base handler + middleware (auth, logger, recovery, rate limiter, CORS)
+4. Router setup
+5. Config management (.env)
+6. Input validation setup (go-playground/validator)
+7. Simpan ke docs/setup.md
+
+PHASE 3 — IMPLEMENT
+Implement resource pertama end-to-end:
+- Model / entity
+- Repository (parameterized query wajib)
+- Service (business logic)
+- Handler (HTTP) + validation
+- Route registration
+
+Pastikan semua kode mengikuti Security Standards dan Code Quality Standards di CLAUDE.md.
+Mulai sekarang.
+```
+
+---
+
+### ── MOBILE CROSS-PLATFORM (Flutter) ────────────────────────
+
+```
+[NEW APP — FLUTTER]
+
+App: [nama aplikasi]
+Platform: [Android / iOS / both]
+Deskripsi: [deskripsi singkat]
+
+Fitur:
+- [fitur 1]
+- [fitur 2]
+
+Tech Stack:
+- Flutter [versi] + Dart
+- State: [Riverpod / Bloc / Provider]
+- Backend: [REST API / Firebase / Supabase]
+- Local storage: [Hive / Isar / SQLite]
+- Auth: [Firebase Auth / JWT]
+- Extra: [FCM / Google Maps / Camera / dst]
+
+Jalankan workflow ini TANPA nunggu konfirmasi:
+
+PHASE 1 — ARCHITECTURE
+1. App architecture (feature-first / layer-first)
+2. Data model + API contract
+3. Screen flow diagram
+4. Breakdown fitur + urutan pengerjaan
+5. Simpan ke docs/architecture.md
+
+PHASE 2 — PROJECT SETUP
+1. Struktur folder
+2. Base: AppTheme, AppRouter, AppColors, AppTypography
+3. Network layer: Dio + interceptor + error handler + SSL pinning
+4. flutter_secure_storage untuk token sensitif
+5. State management setup
+6. Auth flow skeleton
+7. Obfuscation config di build
+8. Simpan ke docs/setup.md
+
+PHASE 3 — IMPLEMENT
+Implement fitur pertama end-to-end:
+- Data model + repository
+- State/provider/bloc
+- UI screens + widgets
+- Navigation
+
+Pastikan semua kode mengikuti Security Standards dan Code Quality Standards di CLAUDE.md.
+Mulai sekarang.
+```
+
+---
+
+### ── AI / ML PROJECT ─────────────────────────────────────────
+
+```
+[NEW PROJECT — AI/ML]
+
+Project: [nama project]
+Deskripsi: [apa yang dilakukan]
+Problem type: [classification / NLP / computer vision / RAG / LLM agent / dst]
+
+Input: [deskripsi data input]
+Output: [deskripsi output yang diinginkan]
+
+Tech Stack:
+- Python
+- Framework: [PyTorch / TensorFlow / HuggingFace / Scikit-learn]
+- LLM: [Anthropic / OpenAI / Gemini / Ollama]
+- Vector DB: [ChromaDB / FAISS / Pinecone] (jika RAG)
+- Serving: [FastAPI / Gradio / Streamlit]
+- Extra: [LangChain / LlamaIndex / dst]
+
+Jalankan workflow ini TANPA nunggu konfirmasi:
+
+PHASE 1 — ARCHITECTURE
+1. ML system architecture (data flow diagram)
+2. Model selection rationale
+3. Pipeline breakdown (data → preprocess → train/infer → eval → serve)
+4. Urutan pengerjaan
+5. Simpan ke docs/architecture.md
+
+PHASE 2 — PROJECT SETUP
+1. Struktur folder (data/, models/, src/, notebooks/, api/)
+2. requirements.txt / pyproject.toml
+3. Config management (.env / yaml) — semua API key ke env
+4. Data loading + EDA skeleton
+5. Logging setup (bukan print)
+6. Input validation (Pydantic) untuk serving endpoint
+7. Simpan ke docs/setup.md
+
+PHASE 3 — IMPLEMENT
+Implement pipeline pertama end-to-end:
+- Data preprocessing
+- Model / chain / agent setup
+- Training / inference
+- Basic evaluation
+- Serving endpoint dengan validation + rate limiting
+
+Pastikan semua kode mengikuti Security Standards dan Code Quality Standards di CLAUDE.md.
+Mulai sekarang.
+```
+
+---
+
+### ── MICRO SAAS / SIDE PROJECT ──────────────────────────────
+
+```
+[NEW APP — MICRO SAAS]
+
+App: [nama]
+Tagline: [1 kalimat value proposition]
+Target user: [siapa yang pakai]
+
+Core features (MVP only):
+- [fitur 1]
+- [fitur 2]
+- [fitur 3]
+
+Tech Stack:
+- Frontend: [Next.js / React / Vue]
+- Backend: [Next.js API / Laravel / dst]
+- Database: [Supabase / PlanetScale / Neon]
+- Auth: [Clerk / NextAuth / Supabase Auth]
+- Payment: [Stripe] (opsional)
+- Deploy: [Vercel / Railway / Fly.io]
+- Cost target: [gratis tier / < $X/bulan]
+
+Jalankan workflow ini TANPA nunggu konfirmasi:
+
+PHASE 1 — ARCHITECTURE
+1. MVP scope (in/out tegas)
+2. Tech stack justification (cost-optimized)
+3. Data model minimal
+4. API/route list
+5. Breakdown + urutan pengerjaan
+6. Simpan ke docs/architecture.md
+
+PHASE 2 — PROJECT SETUP
+1. Project init + folder structure
+2. Database setup + schema
+3. Auth setup
+4. Base layout + design system minimal
+5. Security headers + CORS config
+6. Deploy config + env management
+7. Simpan ke docs/setup.md
+
+PHASE 3 — IMPLEMENT
+Implement core feature pertama:
+- Data layer
+- Business logic
+- UI
+
+Pastikan semua kode mengikuti Security Standards dan Code Quality Standards di CLAUDE.md.
+Mulai sekarang.
+```
+
+---
+
+## 📐 General Coding Standards
+
+### Universal
+- No magic number → constant/enum/config
+- Error handling eksplisit di setiap layer — no empty catch
+- Naming deskriptif, spesifik, dan konsisten
+- No dead code — hapus kode yang tidak dipakai
+- No TODO tanpa tiket/issue reference
+- Production-ready dari hari pertama, no placeholder
+- Satu fungsi satu tanggung jawab (max 30 baris)
+- Satu file satu concern (max 300 baris)
+- DRY — duplikasi 2x → ekstrak ke fungsi/helper
+
+### Komentar
+- Kode harus self-explanatory — penamaan yang baik lebih baik dari komentar
+- Komentar HANYA untuk: dokumentasi API publik, algoritma non-obvious (tulis KENAPA bukan APA), TODO dengan issue reference
+- DILARANG komentar yang menjelaskan apa yang dilakukan kode (itu tugas penamaan)
+
+### Android (Kotlin)
+- MVVM + Repository, Coroutines + Flow
+- Jetpack Compose untuk UI baru
+- Offline-first: Room → WorkManager → API
+- Edge-to-edge insets wajib
+
+### Laravel
+- PSR-12, Form Request untuk validation
+- Policy untuk authorization
+- Response wrapper: `{ success, data, message, errors }`
+
+### Next.js / React
+- TypeScript strict mode
+- Functional component + hooks only
+- Server Component default, Client Component kalau perlu interaktivitas
+
+### ASP.NET Core
+- Clean architecture, async/await semua endpoint
+- FluentValidation, response wrapper konsisten
+
+### Golang
+- Error handling eksplisit, no panic di production
+- Clean arch: handler → service → repository
+
+### Flutter
+- Null safety wajib
+- Widget kecil (max ~50 baris)
+- const constructor wherever possible
+
+### Python / AI
+- Type hints wajib di semua fungsi
+- Pydantic untuk data model
+- Logging bukan print
+
+---
+
+## ⚡ Quick Commands
+
+```bash
+# Model switching
+/model claude-sonnet-4-6    # default harian
+/model claude-opus-4-8      # complex task / security review
+/model claude-fable-5       # architecture / last resort
+
+# Mid-session prompts
+"Lanjut ke fitur berikutnya dari breakdown"
+"Review semua perubahan session ini — cek security + code quality"
+"Gw stuck di [masalah], ini kodenya: [paste]"
+"Security audit bagian ini: [paste]"
+"Refactor bagian ini biar lebih clean: [paste]"
+"Generate unit test untuk: [paste]"
+"Explain arsitektur yang udah dibangun sejauh ini"
+"Cek ada vulnerability di kode ini: [paste]"
+```
+
+---
+
 # InvenScan — Commercial Inventory System Product
 
 ## Overview
