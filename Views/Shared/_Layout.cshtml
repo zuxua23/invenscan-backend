@@ -1,49 +1,124 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - InvenScan</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/InvenScan.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
+    <style>
+        body { font-size: 14px; background: #f5f7fb; }
+        #sidebar { min-width: 240px; max-width: 240px; min-height: 100vh; background: #1a2035; transition: all .3s; flex-shrink: 0; }
+        #sidebar .sidebar-brand { padding: 18px 16px; font-size: 20px; font-weight: 700; color: #fff; border-bottom: 1px solid rgba(255,255,255,.1); letter-spacing: 1px; }
+        #sidebar .nav-link { color: rgba(255,255,255,.75); padding: 9px 16px; border-radius: 6px; margin: 2px 8px; font-size: 13px; }
+        #sidebar .nav-link:hover, #sidebar .nav-link.active { background: rgba(255,255,255,.12); color: #fff; }
+        #sidebar .nav-link i { width: 20px; }
+        #sidebar .nav-section { color: rgba(255,255,255,.4); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 14px 24px 4px; }
+        #page-content { flex: 1; overflow-x: hidden; }
+        .top-navbar { background: #fff; border-bottom: 1px solid #e9ecef; padding: 0 24px; height: 56px; }
+        .card { border: 1px solid #e9ecef; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+        .card-stat { border-left: 4px solid; }
+        .table th { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6c757d; background: #f8f9fa; }
+        .badge { font-size: 11px; font-weight: 600; }
+    </style>
+    @RenderSection("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">InvenScan</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
+<div class="d-flex" style="min-height:100vh">
+    <nav id="sidebar" class="d-flex flex-column">
+        <div class="sidebar-brand"><i class="bi bi-upc-scan me-2"></i>InvenScan</div>
+        <ul class="nav flex-column mt-2 flex-grow-1">
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "HomeWeb" ? "active" : "")"
+                   asp-controller="HomeWeb" asp-action="Index">
+                    <i class="bi bi-grid-1x2 me-2"></i>Dashboard
+                </a>
+            </li>
+            <li><span class="nav-section">Master Data</span></li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ItemWeb" ? "active" : "")"
+                   asp-controller="ItemWeb" asp-action="Index">
+                    <i class="bi bi-box-seam me-2"></i>Items
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "LocationWeb" ? "active" : "")"
+                   asp-controller="LocationWeb" asp-action="Index">
+                    <i class="bi bi-geo-alt me-2"></i>Locations
+                </a>
+            </li>
+            <li><span class="nav-section">Transactions</span></li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "StockTakingWeb" ? "active" : "")"
+                   asp-controller="StockTakingWeb" asp-action="Index">
+                    <i class="bi bi-clipboard-check me-2"></i>Stock Taking
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "StockPrepWeb" ? "active" : "")"
+                   asp-controller="StockPrepWeb" asp-action="Index">
+                    <i class="bi bi-bag-check me-2"></i>Stock Prep
+                </a>
+            </li>
+            @if (User.IsInRole("ADMIN"))
+            {
+                <li><span class="nav-section">Admin</span></li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "UserWeb" ? "active" : "")"
+                       asp-controller="UserWeb" asp-action="Index">
+                        <i class="bi bi-people me-2"></i>Users
+                    </a>
+                </li>
+            }
+        </ul>
+        <div class="px-3 pb-3 pt-2" style="border-top:1px solid rgba(255,255,255,.1)">
+            <small style="color:rgba(255,255,255,.35)">InvenScan v1.0.0</small>
+        </div>
+    </nav>
+
+    <div id="page-content" class="d-flex flex-column">
+        <nav class="top-navbar d-flex align-items-center justify-content-between">
+            <span class="fw-semibold text-secondary">@ViewData["Title"]</span>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-secondary small">
+                    <i class="bi bi-person-circle me-1"></i>
+                    @User.Identity?.Name
+                    <span class="badge bg-secondary ms-1">@User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value</span>
+                </span>
+                <form asp-controller="AuthWeb" asp-action="Logout" method="post" class="mb-0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </form>
             </div>
         </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - InvenScan - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        <div class="p-4 flex-grow-1">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @RenderBody()
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+@RenderSection("Scripts", required: false)
 </body>
 </html>

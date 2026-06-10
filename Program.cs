@@ -4,6 +4,7 @@ using InvenScan.Service.Implementations;
 using InvenScan.Service.Interfaces;
 using InvenScan.Utility;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -20,10 +21,9 @@ var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException(
 
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = AppConstants.AuthSchemes.Cookie;
 })
-.AddJwtBearer(options =>
+.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -52,6 +52,17 @@ builder.Services.AddAuthentication(options =>
             return context.Response.WriteAsync("{\"success\":false,\"message\":\"Forbidden. You do not have permission.\"}");
         }
     };
+})
+.AddCookie(AppConstants.AuthSchemes.Cookie, options =>
+{
+    options.LoginPath = "/login";
+    options.LogoutPath = "/logout";
+    options.AccessDeniedPath = "/login";
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Strict;
 });
 
 builder.Services.AddAuthorization();
@@ -60,17 +71,20 @@ var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowConfiguredOrigins", policy =>
-    {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
+        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod());
 });
 
 builder.Services.AddScoped<JwtTokenHelper>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
+builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<IStockInService, StockInService>();
+builder.Services.AddScoped<IStockTakingService, StockTakingService>();
+builder.Services.AddScoped<IStockPrepService, StockPrepService>();
+builder.Services.AddScoped<ISearchItemService, SearchItemService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var app = builder.Build();
 
@@ -96,7 +110,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=HomeWeb}/{action=Index}/{id?}");
 
 app.MapControllers();
 

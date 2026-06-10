@@ -1,0 +1,98 @@
+@using InvenScan.Entity
+@{
+    ViewData["Title"] = "Create Picking List";
+    var items = ViewData["Items"] as List<Item> ?? new();
+    var locations = ViewData["Locations"] as List<Location> ?? new();
+}
+
+<div style="max-width:760px">
+    <a asp-controller="StockPrepWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+    <div class="card p-4">
+        @if (ViewData["Error"] != null)
+        {
+            <div class="alert alert-danger py-2 small">@ViewData["Error"]</div>
+        }
+
+        <form id="prepForm" asp-controller="StockPrepWeb" asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Notes</label>
+                <input name="Notes" class="form-control" placeholder="Optional notes for this picking list" />
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="fw-semibold small">Items to Pick <span class="text-danger">*</span></label>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="addRow">
+                    <i class="bi bi-plus-lg me-1"></i>Add Row
+                </button>
+            </div>
+
+            <div id="itemRows">
+                <div class="row g-2 mb-2 item-row">
+                    <div class="col-5">
+                        <select name="Items[0].ItemId" class="form-select form-select-sm" required>
+                            <option value="">-- Select Item --</option>
+                            @foreach (var item in items)
+                            {
+                                <option value="@item.Id">@item.ItemCode — @item.ItemName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <select name="Items[0].LocationId" class="form-select form-select-sm" required>
+                            <option value="">-- Select Location --</option>
+                            @foreach (var loc in locations)
+                            {
+                                <option value="@loc.Id">@loc.LocationCode — @loc.LocationName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-2">
+                        <input name="Items[0].RequestedQty" type="number" class="form-control form-control-sm" placeholder="Qty" min="1" value="1" required />
+                    </div>
+                    <div class="col-1">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-row" style="display:none">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-3">
+                <i class="bi bi-save me-1"></i>Create Picking List
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var itemOptions = `@Html.Raw(string.Join("", items.Select(i => $"<option value='{i.Id}'>{i.ItemCode} — {i.ItemName}</option>")))`;
+        var locOptions = `@Html.Raw(string.Join("", locations.Select(l => $"<option value='{l.Id}'>{l.LocationCode} — {l.LocationName}</option>")))`;
+        var rowIndex = 1;
+
+        $('#addRow').click(function () {
+            var row = `<div class="row g-2 mb-2 item-row">
+                <div class="col-5"><select name="Items[${rowIndex}].ItemId" class="form-select form-select-sm" required><option value="">-- Select Item --</option>${itemOptions}</select></div>
+                <div class="col-4"><select name="Items[${rowIndex}].LocationId" class="form-select form-select-sm" required><option value="">-- Select Location --</option>${locOptions}</select></div>
+                <div class="col-2"><input name="Items[${rowIndex}].RequestedQty" type="number" class="form-control form-control-sm" placeholder="Qty" min="1" value="1" required /></div>
+                <div class="col-1"><button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="bi bi-trash"></i></button></div>
+            </div>`;
+            $('#itemRows').append(row);
+            rowIndex++;
+            updateRemoveButtons();
+        });
+
+        $(document).on('click', '.remove-row', function () {
+            $(this).closest('.item-row').remove();
+            updateRemoveButtons();
+        });
+
+        function updateRemoveButtons() {
+            var rows = $('.item-row');
+            rows.find('.remove-row').toggle(rows.length > 1);
+        }
+    </script>
+}

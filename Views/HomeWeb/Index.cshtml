@@ -1,0 +1,84 @@
+@using InvenScan.DTO.Response
+@model DashboardSummaryResponse
+@{ ViewData["Title"] = "Dashboard"; }
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-stat p-3" style="border-color:#0d6efd">
+            <div class="text-muted small mb-1">Total Items</div>
+            <div class="fs-3 fw-bold text-primary">@Model.TotalItems</div>
+            <div class="text-muted small"><i class="bi bi-box-seam me-1"></i>Active items</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-stat p-3" style="border-color:#198754">
+            <div class="text-muted small mb-1">Locations</div>
+            <div class="fs-3 fw-bold text-success">@Model.TotalLocations</div>
+            <div class="text-muted small"><i class="bi bi-geo-alt me-1"></i>Active locations</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-stat p-3" style="border-color:#6f42c1">
+            <div class="text-muted small mb-1">Registered Tags</div>
+            <div class="fs-3 fw-bold" style="color:#6f42c1">@Model.TotalTags</div>
+            <div class="text-muted small"><i class="bi bi-tag me-1"></i>RFID / Barcode</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-stat p-3" style="border-color:#ffc107">
+            <div class="text-muted small mb-1">Stock Taking</div>
+            <div class="fs-3 fw-bold text-warning">@Model.ActiveStockTakingSessions</div>
+            <div class="text-muted small"><i class="bi bi-clipboard-check me-1"></i>Active sessions</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-stat p-3" style="border-color:#fd7e14">
+            <div class="text-muted small mb-1">Stock Prep</div>
+            <div class="fs-3 fw-bold text-warning">@Model.PendingStockPrepDocs</div>
+            <div class="text-muted small"><i class="bi bi-bag-check me-1"></i>Pending docs</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-2">
+        <div class="card card-stat p-3" style="border-color:#20c997">
+            <div class="text-muted small mb-1">Active Users</div>
+            <div class="fs-3 fw-bold text-success">@Model.TotalUsers</div>
+            <div class="text-muted small"><i class="bi bi-people me-1"></i>System users</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h6 class="fw-semibold mb-3"><i class="bi bi-lightning-fill text-warning me-2"></i>Quick Actions</h6>
+            <div class="d-grid gap-2">
+                @if (User.IsInRole("ADMIN"))
+                {
+                    <a asp-controller="StockTakingWeb" asp-action="Index" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="bi bi-clipboard-plus me-2"></i>New Stock Taking Session
+                    </a>
+                    <a asp-controller="StockPrepWeb" asp-action="Create" class="btn btn-outline-success btn-sm text-start">
+                        <i class="bi bi-plus-circle me-2"></i>Create Picking List
+                    </a>
+                    <a asp-controller="ItemWeb" asp-action="Create" class="btn btn-outline-secondary btn-sm text-start">
+                        <i class="bi bi-box-seam me-2"></i>Add New Item
+                    </a>
+                }
+                <a asp-controller="StockTakingWeb" asp-action="Index" class="btn btn-outline-secondary btn-sm text-start">
+                    <i class="bi bi-clock-history me-2"></i>View Stock Taking History
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h6 class="fw-semibold mb-3"><i class="bi bi-info-circle text-info me-2"></i>System Info</h6>
+            <table class="table table-sm table-borderless mb-0">
+                <tr><td class="text-muted small" style="width:50%">Product</td><td class="small fw-semibold">InvenScan v1.0.0</td></tr>
+                <tr><td class="text-muted small">Framework</td><td class="small fw-semibold">ASP.NET Core 8</td></tr>
+                <tr><td class="text-muted small">Database</td><td class="small fw-semibold">SQL Server</td></tr>
+                <tr><td class="text-muted small">Server Time</td><td class="small fw-semibold">@DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm") UTC</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
