@@ -110,7 +110,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.Migrate();
+    if (context.Database.IsRelational())
+        context.Database.Migrate();
+    else
+        context.Database.EnsureCreated();
     AppDbSeeder.Seed(context);
 }
 
@@ -144,3 +147,5 @@ app.MapControllerRoute(
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

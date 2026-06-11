@@ -4,7 +4,15 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="InvenScan.Tests/**" />
+    <Content Remove="InvenScan.Tests/**" />
+    <EmbeddedResource Remove="InvenScan.Tests/**" />
+    <None Remove="InvenScan.Tests/**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />

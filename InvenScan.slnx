@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="InvenScan.csproj" />
+  <Project Path="InvenScan.Tests/InvenScan.Tests.csproj" />
 </Solution>
