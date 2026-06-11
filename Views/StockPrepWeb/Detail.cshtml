@@ -2,81 +2,90 @@
 @model StockPrepResponse
 @{ ViewData["Title"] = $"Picking List {Model.DocNumber}"; }
 
-<a asp-controller="StockPrepWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
-    <i class="bi bi-arrow-left me-1"></i>Back
-</a>
+<div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+        <a asp-controller="StockPrepWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="page-title mb-0">Picking List Detail</h1>
+    </div>
+</div>
 
-<div class="card p-3 mb-3">
-    <div class="row g-2">
-        <div class="col-auto">
-            <span class="text-muted small">Doc Number</span>
-            <div class="fw-bold"><code>@Model.DocNumber</code></div>
+<div class="card mb-3">
+    <div class="detail-header">
+        <div class="detail-header-item">
+            <div class="dh-label">Doc Number</div>
+            <div class="dh-value"><code>@Model.DocNumber</code></div>
         </div>
-        <div class="col-auto">
-            <span class="text-muted small">Status</span>
-            <div>
+        <div class="detail-header-item">
+            <div class="dh-label">Status</div>
+            <div class="dh-value">
                 @switch (Model.Status)
                 {
-                    case "OPEN": <span class="badge bg-primary">OPEN</span> break;
-                    case "IN_PROGRESS": <span class="badge bg-warning text-dark">IN PROGRESS</span> break;
-                    default: <span class="badge bg-success">DONE</span> break;
+                    case "OPEN":
+                        <span class="badge-teal">OPEN</span>
+                        break;
+                    case "IN_PROGRESS":
+                        <span class="badge-warning">IN PROGRESS</span>
+                        break;
+                    default:
+                        <span class="badge-gray">DONE</span>
+                        break;
                 }
             </div>
         </div>
-        <div class="col-auto">
-            <span class="text-muted small">Progress</span>
-            <div class="fw-bold">@Model.PickedItems / @Model.TotalItems picked</div>
+        <div class="detail-header-item">
+            <div class="dh-label">Progress</div>
+            <div class="dh-value">@Model.PickedItems / @Model.TotalItems picked</div>
         </div>
-        <div class="col-auto">
-            <span class="text-muted small">Created By</span>
-            <div class="text-muted small">@Model.CreatedBy</div>
+        <div class="detail-header-item">
+            <div class="dh-label">Created By</div>
+            <div class="dh-value is-hint">@Model.CreatedBy</div>
         </div>
-        <div class="col-auto">
-            <span class="text-muted small">Created</span>
-            <div class="text-muted small">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+        <div class="detail-header-item">
+            <div class="dh-label">Created</div>
+            <div class="dh-value is-hint">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
         </div>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-body p-0">
-        <table id="detailTable" class="table table-hover mb-0">
-            <thead>
+<div class="is-card">
+    <table id="detailTable" class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>Location</th>
+                <th>Requested</th>
+                <th>Picked</th>
+                <th>Status</th>
+                <th>Scanned Code</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var d in Model.Details)
+            {
                 <tr>
-                    <th>Item Code</th>
-                    <th>Item Name</th>
-                    <th>Location</th>
-                    <th>Requested</th>
-                    <th>Picked</th>
-                    <th>Status</th>
-                    <th>Scanned Code</th>
+                    <td><code>@d.ItemCode</code></td>
+                    <td>@d.ItemName</td>
+                    <td style="color:var(--text-secondary);font-size:12px">@d.LocationCode — @d.LocationName</td>
+                    <td>@d.RequestedQty @d.Unit</td>
+                    <td style="font-weight:600;color:@(d.PickedQty >= d.RequestedQty ? "var(--teal)" : "inherit")">@d.PickedQty</td>
+                    <td>
+                        @if (d.Status == "PICKED")
+                        {
+                            <span class="badge-teal">PICKED</span>
+                        }
+                        else
+                        {
+                            <span class="badge-gray">PENDING</span>
+                        }
+                    </td>
+                    <td><code style="font-size:11px;color:var(--text-hint)">@(string.IsNullOrWhiteSpace(d.ScannedCode) ? "—" : d.ScannedCode)</code></td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var d in Model.Details)
-                {
-                    <tr>
-                        <td><code>@d.ItemCode</code></td>
-                        <td>@d.ItemName</td>
-                        <td class="text-muted small">@d.LocationCode — @d.LocationName</td>
-                        <td>@d.RequestedQty @d.Unit</td>
-                        <td class="fw-bold @(d.PickedQty >= d.RequestedQty ? "text-success" : "")">@d.PickedQty</td>
-                        <td>
-                            @if (d.Status == "PICKED")
-                            {
-                                <span class="badge bg-success">PICKED</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary">PENDING</span>
-                            }
-                        </td>
-                        <td><code class="small text-muted">@(string.IsNullOrWhiteSpace(d.ScannedCode) ? "-" : d.ScannedCode)</code></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+            }
+        </tbody>
+    </table>
 </div>
 
 @section Scripts {

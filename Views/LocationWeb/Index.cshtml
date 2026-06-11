@@ -2,7 +2,8 @@
 @model List<LocationResponse>
 @{ ViewData["Title"] = "Locations"; }
 
-<div class="d-flex justify-content-end mb-3">
+<div class="page-header">
+    <h1 class="page-title">Locations</h1>
     @if (User.IsInRole("ADMIN"))
     {
         <a asp-controller="LocationWeb" asp-action="Create" class="btn btn-primary btn-sm">
@@ -11,32 +12,32 @@
     }
 </div>
 
-<div class="card">
-    <div class="card-body p-0">
-        <table id="locationTable" class="table table-hover mb-0">
-            <thead>
+<div class="is-card">
+    <table id="locationTable" class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Location Code</th>
+                <th>Location Name</th>
+                <th>Description</th>
+                <th>Created</th>
+                @if (User.IsInRole("ADMIN"))
+                {
+                    <th style="width:100px">Actions</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var loc in Model)
+            {
                 <tr>
-                    <th>Location Code</th>
-                    <th>Location Name</th>
-                    <th>Description</th>
-                    <th>Created</th>
+                    <td><code>@loc.LocationCode</code></td>
+                    <td>@loc.LocationName</td>
+                    <td style="color:var(--text-secondary)">@loc.Description</td>
+                    <td style="color:var(--text-hint);font-size:12px">@loc.CreatedAt.ToString("yyyy-MM-dd")</td>
                     @if (User.IsInRole("ADMIN"))
                     {
-                        <th style="width:120px">Actions</th>
-                    }
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var loc in Model)
-                {
-                    <tr>
-                        <td><code>@loc.LocationCode</code></td>
-                        <td>@loc.LocationName</td>
-                        <td class="text-muted">@loc.Description</td>
-                        <td class="text-muted small">@loc.CreatedAt.ToString("yyyy-MM-dd")</td>
-                        @if (User.IsInRole("ADMIN"))
-                        {
-                            <td>
+                        <td>
+                            <div class="d-flex gap-1">
                                 <a asp-controller="LocationWeb" asp-action="Edit" asp-route-id="@loc.Id"
                                    class="btn btn-sm btn-outline-secondary py-0">
                                     <i class="bi bi-pencil"></i>
@@ -49,13 +50,13 @@
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
-                            </td>
-                        }
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                            </div>
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
 
 @section Scripts {

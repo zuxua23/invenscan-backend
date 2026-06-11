@@ -2,63 +2,62 @@
 @model List<UserResponse>
 @{ ViewData["Title"] = "Users"; }
 
-<div class="d-flex justify-content-end mb-3">
+<div class="page-header">
+    <h1 class="page-title">Users</h1>
     <a asp-controller="UserWeb" asp-action="Create" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg me-1"></i>Add User
     </a>
 </div>
 
-<div class="card">
-    <div class="card-body p-0">
-        <table id="userTable" class="table table-hover mb-0">
-            <thead>
+<div class="is-card">
+    <table id="userTable" class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Full Name</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th style="width:80px">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
                 <tr>
-                    <th>User ID</th>
-                    <th>Full Name</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th style="width:80px">Actions</th>
+                    <td><code>@user.UserId</code></td>
+                    <td>@user.FullName</td>
+                    <td>
+                        @if (user.Role == "ADMIN")
+                        {
+                            <span class="badge-danger">ADMIN</span>
+                        }
+                        else
+                        {
+                            <span class="badge-gray">OPERATOR</span>
+                        }
+                    </td>
+                    <td>
+                        @if (user.IsActive)
+                        {
+                            <span class="badge-teal">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge-gray">Inactive</span>
+                        }
+                    </td>
+                    <td style="color:var(--text-hint);font-size:12px">@user.CreatedAt.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <a asp-controller="UserWeb" asp-action="Edit" asp-route-userId="@user.UserId"
+                           class="btn btn-sm btn-outline-secondary py-0">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in Model)
-                {
-                    <tr>
-                        <td><code>@user.UserId</code></td>
-                        <td>@user.FullName</td>
-                        <td>
-                            @if (user.Role == "ADMIN")
-                            {
-                                <span class="badge bg-danger">ADMIN</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary">OPERATOR</span>
-                            }
-                        </td>
-                        <td>
-                            @if (user.IsActive)
-                            {
-                                <span class="badge bg-success">Active</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary">Inactive</span>
-                            }
-                        </td>
-                        <td class="text-muted small">@user.CreatedAt.ToString("yyyy-MM-dd")</td>
-                        <td>
-                            <a asp-controller="UserWeb" asp-action="Edit" asp-route-userId="@user.UserId"
-                               class="btn btn-sm btn-outline-secondary py-0">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+            }
+        </tbody>
+    </table>
 </div>
 
 @section Scripts {

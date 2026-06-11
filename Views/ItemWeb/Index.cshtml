@@ -2,8 +2,8 @@
 @model List<ItemResponse>
 @{ ViewData["Title"] = "Items"; }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div></div>
+<div class="page-header">
+    <h1 class="page-title">Items</h1>
     @if (User.IsInRole("ADMIN"))
     {
         <a asp-controller="ItemWeb" asp-action="Create" class="btn btn-primary btn-sm">
@@ -12,34 +12,34 @@
     }
 </div>
 
-<div class="card">
-    <div class="card-body p-0">
-        <table id="itemTable" class="table table-hover mb-0">
-            <thead>
+<div class="is-card">
+    <table id="itemTable" class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>Unit</th>
+                <th>Min Stock</th>
+                <th>Created</th>
+                @if (User.IsInRole("ADMIN"))
+                {
+                    <th style="width:100px">Actions</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
                 <tr>
-                    <th>Item Code</th>
-                    <th>Item Name</th>
-                    <th>Unit</th>
-                    <th>Min Stock</th>
-                    <th>Created</th>
+                    <td><code>@item.ItemCode</code></td>
+                    <td>@item.ItemName</td>
+                    <td style="color:var(--text-secondary)">@item.Unit</td>
+                    <td style="color:var(--text-secondary)">@item.MinStock</td>
+                    <td style="color:var(--text-hint);font-size:12px">@item.CreatedAt.ToString("yyyy-MM-dd")</td>
                     @if (User.IsInRole("ADMIN"))
                     {
-                        <th style="width:120px">Actions</th>
-                    }
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td><code>@item.ItemCode</code></td>
-                        <td>@item.ItemName</td>
-                        <td>@item.Unit</td>
-                        <td>@item.MinStock</td>
-                        <td class="text-muted small">@item.CreatedAt.ToString("yyyy-MM-dd")</td>
-                        @if (User.IsInRole("ADMIN"))
-                        {
-                            <td>
+                        <td>
+                            <div class="d-flex gap-1">
                                 <a asp-controller="ItemWeb" asp-action="Edit" asp-route-id="@item.Id"
                                    class="btn btn-sm btn-outline-secondary py-0">
                                     <i class="bi bi-pencil"></i>
@@ -52,13 +52,13 @@
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
-                            </td>
-                        }
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                            </div>
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
 
 @section Scripts {
