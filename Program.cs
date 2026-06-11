@@ -102,6 +102,8 @@ builder.Services.AddScoped<IStockPrepService, StockPrepService>();
 builder.Services.AddScoped<ISearchItemService, SearchItemService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+builder.Services.AddHostedService<ActivityLogCleanupService>();
 
 var app = builder.Build();
 

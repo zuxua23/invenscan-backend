@@ -4,9 +4,9 @@
 
 <div class="page-header">
     <h1 class="page-title">Users</h1>
-    <a asp-controller="UserWeb" asp-action="Create" class="btn btn-primary btn-sm">
+    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createUserModal">
         <i class="bi bi-plus-lg me-1"></i>Add User
-    </a>
+    </button>
 </div>
 
 <div class="is-card">
@@ -18,7 +18,7 @@
                 <th>Role</th>
                 <th>Status</th>
                 <th>Created</th>
-                <th style="width:80px">Actions</th>
+                <th style="width:60px">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -28,31 +28,22 @@
                     <td><code>@user.UserId</code></td>
                     <td>@user.FullName</td>
                     <td>
-                        @if (user.Role == "ADMIN")
-                        {
-                            <span class="badge-danger">ADMIN</span>
-                        }
-                        else
-                        {
-                            <span class="badge-gray">OPERATOR</span>
-                        }
+                        @if (user.Role == "ADMIN") { <span class="badge-danger">ADMIN</span> }
+                        else { <span class="badge-gray">OPERATOR</span> }
                     </td>
                     <td>
-                        @if (user.IsActive)
-                        {
-                            <span class="badge-teal">Active</span>
-                        }
-                        else
-                        {
-                            <span class="badge-gray">Inactive</span>
-                        }
+                        @if (user.IsActive) { <span class="badge-teal">Active</span> }
+                        else { <span class="badge-gray">Inactive</span> }
                     </td>
                     <td style="color:var(--text-hint);font-size:12px">@user.CreatedAt.ToString("yyyy-MM-dd")</td>
                     <td>
-                        <a asp-controller="UserWeb" asp-action="Edit" asp-route-userId="@user.UserId"
-                           class="btn btn-sm btn-outline-secondary py-0">
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 btn-edit-user"
+                                data-userid="@user.UserId"
+                                data-fullname="@user.FullName"
+                                data-role="@user.Role"
+                                data-active="@user.IsActive.ToString().ToLower()">
                             <i class="bi bi-pencil"></i>
-                        </a>
+                        </button>
                     </td>
                 </tr>
             }
@@ -60,6 +51,110 @@
     </table>
 </div>
 
+<!-- Create User Modal -->
+<div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header is-dark">
+                <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Add User</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createUserForm" action="/users/create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Username <span style="color:var(--danger)">*</span></label>
+                        <input name="UserId" class="form-control" placeholder="e.g. operator2" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input name="FullName" class="form-control" placeholder="Display name" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password <span style="color:var(--danger)">*</span></label>
+                        <input name="Password" type="password" class="form-control" placeholder="Minimum 6 characters" required minlength="6" />
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Role</label>
+                        <select name="Role" class="form-select">
+                            <option value="OPERATOR" selected>OPERATOR</option>
+                            <option value="ADMIN">ADMIN</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header is-dark">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit User</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editUserForm" action="/users/edit/placeholder" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input id="editUserIdDisplay" class="form-control" disabled style="background:var(--surface);color:var(--text-hint)" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input id="editUserFullName" name="FullName" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select id="editUserRole" name="Role" class="form-select">
+                            <option value="OPERATOR">OPERATOR</option>
+                            <option value="ADMIN">ADMIN</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select id="editUserActive" name="IsActive" class="form-select">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">New Password <span style="color:var(--text-hint);font-weight:400">(leave blank to keep)</span></label>
+                        <input name="NewPassword" type="password" class="form-control" placeholder="Enter new password to change" minlength="6" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Update User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
-    <script>$(document).ready(function () { $('#userTable').DataTable({ pageLength: 25 }); });</script>
+    <script>
+        $(document).ready(function () { $('#userTable').DataTable({ pageLength: 25 }); });
+
+        bindModalForm('createUserForm', 'createUserModal');
+        bindModalForm('editUserForm', 'editUserModal');
+
+        document.querySelectorAll('.btn-edit-user').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var userId = this.dataset.userid;
+                document.getElementById('editUserIdDisplay').value = userId;
+                document.getElementById('editUserFullName').value = this.dataset.fullname || '';
+                document.getElementById('editUserRole').value = this.dataset.role || 'OPERATOR';
+                document.getElementById('editUserActive').value = this.dataset.active === 'true' ? 'true' : 'false';
+                document.getElementById('editUserForm').action = '/users/edit/' + userId;
+                new bootstrap.Modal(document.getElementById('editUserModal')).show();
+            });
+        });
+    </script>
 }

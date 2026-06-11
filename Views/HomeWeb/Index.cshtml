@@ -8,46 +8,67 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-2">
+    <div class="col-6 col-xl-2">
         <div class="kpi-card">
             <div class="kpi-label">Total Items</div>
             <div class="kpi-value is-teal">@Model.TotalItems</div>
             <div class="kpi-sub"><i class="bi bi-box-seam me-1"></i>Active items</div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-2">
+    <div class="col-6 col-xl-2">
         <div class="kpi-card">
             <div class="kpi-label">Locations</div>
             <div class="kpi-value is-teal">@Model.TotalLocations</div>
             <div class="kpi-sub"><i class="bi bi-geo-alt me-1"></i>Active locations</div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-2">
+    <div class="col-6 col-xl-2">
         <div class="kpi-card">
             <div class="kpi-label">Registered Tags</div>
             <div class="kpi-value">@Model.TotalTags</div>
             <div class="kpi-sub"><i class="bi bi-tag me-1"></i>RFID / Barcode</div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-2">
+    <div class="col-6 col-xl-2">
         <div class="kpi-card">
             <div class="kpi-label">Stock Taking</div>
             <div class="kpi-value is-warn">@Model.ActiveStockTakingSessions</div>
             <div class="kpi-sub"><i class="bi bi-clipboard-check me-1"></i>Active sessions</div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-2">
+    <div class="col-6 col-xl-2">
         <div class="kpi-card">
             <div class="kpi-label">Stock Prep</div>
             <div class="kpi-value is-warn">@Model.PendingStockPrepDocs</div>
             <div class="kpi-sub"><i class="bi bi-bag-check me-1"></i>Pending docs</div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-2">
+    <div class="col-6 col-xl-2">
         <div class="kpi-card">
             <div class="kpi-label">Active Users</div>
             <div class="kpi-value is-teal">@Model.TotalUsers</div>
             <div class="kpi-sub"><i class="bi bi-people me-1"></i>System users</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-5">
+        <div class="chart-card">
+            <div class="chart-title">Stock In — Last 7 Days</div>
+            <canvas id="chartStockIn" height="180"></canvas>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="chart-card">
+            <div class="chart-title">Tag Status Distribution</div>
+            <canvas id="chartTagStatus" height="180"></canvas>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="chart-card">
+            <div class="chart-title">Stock Taking — Last 4 Weeks</div>
+            <canvas id="chartStockTaking" height="180"></canvas>
         </div>
     </div>
 </div>
@@ -66,12 +87,12 @@
                 <a asp-controller="StockPrepWeb" asp-action="Create" class="quick-action-link">
                     <i class="bi bi-plus-circle"></i>Create Picking List
                 </a>
-                <a asp-controller="ItemWeb" asp-action="Create" class="quick-action-link">
-                    <i class="bi bi-box-seam"></i>Add New Item
+                <a asp-controller="ItemWeb" asp-action="Index" class="quick-action-link">
+                    <i class="bi bi-box-seam"></i>Manage Items
                 </a>
             }
-            <a asp-controller="StockTakingWeb" asp-action="Index" class="quick-action-link">
-                <i class="bi bi-clock-history"></i>View Stock Taking History
+            <a asp-controller="TransactionHistoryWeb" asp-action="Index" class="quick-action-link">
+                <i class="bi bi-clock-history"></i>View Transaction History
             </a>
         </div>
     </div>
@@ -101,3 +122,83 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    var chartData = @Html.Raw(ViewBag.ChartData ?? "{}");
+    var teal = '#1D9E75', tealLight = '#5DCAA5', tealBg = 'rgba(29,158,117,0.12)';
+    var navy = '#1A2332', warning = '#EF9F27', danger = '#E24B4A';
+
+    // Bar chart - Stock In per day
+    new Chart(document.getElementById('chartStockIn'), {
+        type: 'bar',
+        data: {
+            labels: chartData.stockInLabels || [],
+            datasets: [{
+                label: 'Stock In',
+                data: chartData.stockInValues || [],
+                backgroundColor: tealBg,
+                borderColor: teal,
+                borderWidth: 1.5,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+            }
+        }
+    });
+
+    // Doughnut chart - Tag status
+    new Chart(document.getElementById('chartTagStatus'), {
+        type: 'doughnut',
+        data: {
+            labels: chartData.tagStatusLabels || ['In Stock', 'Out', 'Unknown'],
+            datasets: [{
+                data: chartData.tagStatusValues || [0, 0, 0],
+                backgroundColor: [teal, danger, warning],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '68%',
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10, boxWidth: 10 } }
+            }
+        }
+    });
+
+    // Line chart - Stock Taking per week
+    new Chart(document.getElementById('chartStockTaking'), {
+        type: 'line',
+        data: {
+            labels: chartData.stockTakingLabels || [],
+            datasets: [{
+                label: 'Sessions',
+                data: chartData.stockTakingValues || [],
+                borderColor: navy,
+                backgroundColor: 'rgba(26,35,50,0.07)',
+                borderWidth: 2,
+                pointBackgroundColor: navy,
+                pointRadius: 4,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+            }
+        }
+    });
+</script>
+}

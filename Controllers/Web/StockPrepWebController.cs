@@ -14,11 +14,13 @@ namespace InvenScan.Controllers.Web;
 public class StockPrepWebController : Controller
 {
     private readonly IStockPrepService _stockPrepService;
+    private readonly IActivityLogService _activityLogService;
     private readonly AppDbContext _context;
 
-    public StockPrepWebController(IStockPrepService stockPrepService, AppDbContext context)
+    public StockPrepWebController(IStockPrepService stockPrepService, IActivityLogService activityLogService, AppDbContext context)
     {
         _stockPrepService = stockPrepService;
+        _activityLogService = activityLogService;
         _context = context;
     }
 
@@ -54,6 +56,10 @@ public class StockPrepWebController : Controller
             return View(request);
         }
 
+        await _activityLogService.LogAsync(userId, userId, "CREATE", "StockPrep",
+            $"Created picking list {result.Data?.DocNumber}",
+            ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString());
+
         TempData["Success"] = $"Picking list {result.Data?.DocNumber} created.";
         return RedirectToAction(nameof(Index));
     }
@@ -62,9 +68,7 @@ public class StockPrepWebController : Controller
     public async Task<IActionResult> Detail(int id)
     {
         var result = await _stockPrepService.GetByIdAsync(id);
-        if (!result.Success)
-            return NotFound();
-
+        if (!result.Success) return NotFound();
         return View(result.Data);
     }
 }

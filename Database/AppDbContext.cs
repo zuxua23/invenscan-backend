@@ -17,6 +17,8 @@ public class AppDbContext : DbContext
     public DbSet<StockInDetail> StockInDetails => Set<StockInDetail>();
     public DbSet<StockPrep> StockPreps => Set<StockPrep>();
     public DbSet<StockPrepDetail> StockPrepDetails => Set<StockPrepDetail>();
+    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -121,6 +123,29 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId);
             entity.HasOne(e => e.Location).WithMany().HasForeignKey(e => e.LocationId);
             entity.Property(e => e.Status).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<ActivityLog>(entity =>
+        {
+            entity.ToTable("tb_ActivityLog");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.UserName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Action).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Module).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Platform).HasMaxLength(20);
+            entity.Property(e => e.IpAddress).HasMaxLength(45);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.UserId);
+        });
+
+        modelBuilder.Entity<AppSetting>(entity =>
+        {
+            entity.ToTable("tb_AppSetting");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Key).IsUnique();
+            entity.Property(e => e.Key).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Value).HasMaxLength(500).IsRequired();
         });
     }
 }

@@ -1,0 +1,151 @@
+@using InvenScan.Controllers.Web
+@model List<TransactionHistoryItem>
+@{ ViewData["Title"] = "Transaction History"; }
+
+<div class="page-header">
+    <h1 class="page-title">Transaction History</h1>
+    <div class="d-flex gap-2">
+        <a href="/transactions/export-csv?type=@ViewBag.FilterType&locationId=@ViewBag.FilterLocationId&status=@ViewBag.FilterStatus&from=@ViewBag.FilterFrom&to=@ViewBag.FilterTo"
+           class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i>Export CSV
+        </a>
+        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-printer me-1"></i>Print / PDF
+        </button>
+    </div>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar mb-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-sm-2">
+            <label class="form-label mb-1" style="font-size:11px">Transaction Type</label>
+            <select name="type" class="form-select form-select-sm">
+                <option value="">All Types</option>
+                <option value="STOCK_IN" selected="@(ViewBag.FilterType == "STOCK_IN" ? "selected" : null)">Stock In</option>
+                <option value="STOCK_PREP" selected="@(ViewBag.FilterType == "STOCK_PREP" ? "selected" : null)">Stock Prep</option>
+                <option value="STOCK_TAKING" selected="@(ViewBag.FilterType == "STOCK_TAKING" ? "selected" : null)">Stock Taking</option>
+            </select>
+        </div>
+        <div class="col-sm-2">
+            <label class="form-label mb-1" style="font-size:11px">Location</label>
+            <select name="locationId" class="form-select form-select-sm">
+                <option value="">All Locations</option>
+                @foreach (var loc in (dynamic)ViewBag.Locations)
+                {
+                    <option value="@loc.Id" selected="@(ViewBag.FilterLocationId?.ToString() == loc.Id.ToString() ? "selected" : null)">
+                        @loc.LocationCode — @loc.LocationName
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-2">
+            <label class="form-label mb-1" style="font-size:11px">Status</label>
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All Statuses</option>
+                @foreach (var s in new[] { "PENDING", "SYNCED", "OPEN", "IN_PROGRESS", "DONE", "CLOSED" })
+                {
+                    <option value="@s" selected="@(ViewBag.FilterStatus == s ? "selected" : null)">@s</option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-2">
+            <label class="form-label mb-1" style="font-size:11px">From Date</label>
+            <input name="from" type="date" class="form-control form-control-sm" value="@ViewBag.FilterFrom" />
+        </div>
+        <div class="col-sm-2">
+            <label class="form-label mb-1" style="font-size:11px">To Date</label>
+            <input name="to" type="date" class="form-control form-control-sm" value="@ViewBag.FilterTo" />
+        </div>
+        <div class="col-sm-2 d-flex gap-2">
+            <button type="submit" class="btn btn-sm btn-primary flex-grow-1"><i class="bi bi-search me-1"></i>Filter</button>
+            <a href="/transactions" class="btn btn-sm btn-outline-secondary">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div class="is-card">
+    <table id="txTable" class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Doc Number</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Items</th>
+                <th>Created By</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="7" class="text-center py-4" style="color:var(--text-hint)">No transactions found.</td></tr>
+            }
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td><code>@t.DocNumber</code></td>
+                    <td>
+                        @{
+                            var typeClass = t.Type == "STOCK IN" ? "badge-teal"
+                                : t.Type == "STOCK PREP" ? "badge-warning"
+                                : "badge-navy";
+                        }
+                        <span class="@typeClass">@t.Type</span>
+                    </td>
+                    <td style="color:var(--text-secondary)">@t.LocationName</td>
+                    <td>
+                        @{
+                            var sClass = t.Status == "SYNCED" || t.Status == "CLOSED" || t.Status == "DONE" ? "badge-teal"
+                                : t.Status == "IN_PROGRESS" || t.Status == "OPEN" ? "badge-warning"
+                                : "badge-gray";
+                        }
+                        <span class="@sClass">@t.Status</span>
+                    </td>
+                    <td>@t.ItemCount</td>
+                    <td style="color:var(--text-secondary);font-size:12px">@t.CreatedBy</td>
+                    <td style="color:var(--text-hint);font-size:12px">@t.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if ((int)ViewBag.TotalPages > 1)
+{
+    <nav class="mt-3">
+        <ul class="pagination pagination-sm is-pagination justify-content-center mb-0">
+            @{
+                var currentPage = (int)ViewBag.Page;
+                var totalPages = (int)ViewBag.TotalPages;
+                var baseUrl = $"/transactions?type={ViewBag.FilterType}&locationId={ViewBag.FilterLocationId}&status={ViewBag.FilterStatus}&from={ViewBag.FilterFrom}&to={ViewBag.FilterTo}";
+            }
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link" href="@baseUrl&page=@(currentPage - 1)">‹</a>
+            </li>
+            @for (var p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+            {
+                <li class="page-item @(p == currentPage ? "active" : "")">
+                    <a class="page-link" href="@baseUrl&page=@p">@p</a>
+                </li>
+            }
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link" href="@baseUrl&page=@(currentPage + 1)">›</a>
+            </li>
+        </ul>
+    </nav>
+}
+
+<div style="font-size:11px;color:var(--text-hint);margin-top:10px">
+    Showing @Model.Count of @ViewBag.Total transactions
+</div>
+
+@section Scripts {
+<style>
+@@media print {
+    .top-navbar, #sidebar, .filter-bar, .page-header .btn, nav { display: none !important; }
+    .is-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+}
+</style>
+}

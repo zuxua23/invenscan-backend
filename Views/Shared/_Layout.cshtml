@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - InvenScan</title>
+    <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('invenscan-theme')||'light')}catch(e){}</script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
@@ -14,22 +15,27 @@
 <div id="app-wrapper">
 
     <nav class="top-navbar">
-        <a href="/" class="navbar-brand-is">
-            <span class="brand-dot"></span>
-            InvenScan
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <button id="sidebarToggleBtn" class="btn-navbar-icon" onclick="toggleSidebar()" title="Toggle Sidebar">
+                <i class="bi bi-layout-sidebar"></i>
+            </button>
+            <a href="/" class="navbar-brand-is">
+                <span class="brand-dot"></span>
+                InvenScan
+            </a>
+        </div>
         <div class="navbar-user">
-            <span>
+            <span class="d-none d-sm-inline">
                 <i class="bi bi-person-circle me-1"></i>
                 @User.Identity?.Name
                 <span class="role-chip ms-1">@User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value</span>
             </span>
-            <form asp-controller="AuthWeb" asp-action="Logout" method="post" class="mb-0">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn-navbar-logout">
-                    <i class="bi bi-box-arrow-right"></i> Logout
-                </button>
-            </form>
+            <button id="themeToggleBtn" class="btn-navbar-icon" onclick="toggleTheme()" title="Toggle Theme">
+                <i class="bi bi-moon-fill"></i>
+            </button>
+            <button type="button" class="btn-navbar-logout" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Logout</span>
+            </button>
         </div>
     </nav>
 
@@ -39,33 +45,39 @@
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "HomeWeb" ? "active" : "")"
                        asp-controller="HomeWeb" asp-action="Index">
-                        <i class="bi bi-grid-1x2"></i>Dashboard
+                        <i class="bi bi-grid-1x2"></i><span>Dashboard</span>
                     </a>
                 </li>
                 <li><span class="nav-section-label">Master Data</span></li>
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ItemWeb" ? "active" : "")"
                        asp-controller="ItemWeb" asp-action="Index">
-                        <i class="bi bi-box-seam"></i>Items
+                        <i class="bi bi-box-seam"></i><span>Items</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "LocationWeb" ? "active" : "")"
                        asp-controller="LocationWeb" asp-action="Index">
-                        <i class="bi bi-geo-alt"></i>Locations
+                        <i class="bi bi-geo-alt"></i><span>Locations</span>
                     </a>
                 </li>
                 <li><span class="nav-section-label">Transactions</span></li>
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "StockTakingWeb" ? "active" : "")"
                        asp-controller="StockTakingWeb" asp-action="Index">
-                        <i class="bi bi-clipboard-check"></i>Stock Taking
+                        <i class="bi bi-clipboard-check"></i><span>Stock Taking</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "StockPrepWeb" ? "active" : "")"
                        asp-controller="StockPrepWeb" asp-action="Index">
-                        <i class="bi bi-bag-check"></i>Stock Prep
+                        <i class="bi bi-bag-check"></i><span>Stock Prep</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "TransactionHistoryWeb" ? "active" : "")"
+                       asp-controller="TransactionHistoryWeb" asp-action="Index">
+                        <i class="bi bi-clock-history"></i><span>Transactions</span>
                     </a>
                 </li>
                 @if (User.IsInRole("ADMIN"))
@@ -74,7 +86,13 @@
                     <li class="nav-item">
                         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "UserWeb" ? "active" : "")"
                            asp-controller="UserWeb" asp-action="Index">
-                            <i class="bi bi-people"></i>Users
+                            <i class="bi bi-people"></i><span>Users</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "ActivityLogWeb" ? "active" : "")"
+                           asp-controller="ActivityLogWeb" asp-action="Index">
+                            <i class="bi bi-journal-text"></i><span>Activity Log</span>
                         </a>
                     </li>
                 }
@@ -105,10 +123,46 @@
 
 </div>
 
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- Logout confirmation modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header is-dark">
+                <h5 class="modal-title"><i class="bi bi-box-arrow-right me-2"></i>Confirm Logout</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:13px;">
+                Are you sure you want to log out?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form asp-controller="AuthWeb" asp-action="Logout" method="post" class="mb-0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-box-arrow-right me-1"></i>Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
 @RenderSection("Scripts", required: false)
+
+<script>
+    // Apply saved theme immediately to avoid flash
+    (function() {
+        var t = localStorage.getItem('invenscan-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+    })();
+</script>
 </body>
 </html>
