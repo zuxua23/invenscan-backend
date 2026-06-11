@@ -1,5 +1,6 @@
 using InvenScan.DTO.Request;
 using InvenScan.Service.Interfaces;
+using InvenScan.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +8,7 @@ namespace InvenScan.Controllers.Api;
 
 [ApiController]
 [Route("api/tag")]
-[Authorize]
+[Authorize(AuthenticationSchemes = AppConstants.AuthSchemes.Jwt)]
 public class TagApiController : ControllerBase
 {
     private readonly ITagService _tagService;
@@ -30,7 +31,7 @@ public class TagApiController : ControllerBase
 
     /// <summary>Register a list of new tags.</summary>
     [HttpPost("register")]
-    [Authorize(Roles = "ADMIN")]
+    [Authorize(AuthenticationSchemes = AppConstants.AuthSchemes.Jwt, Roles = AppConstants.Roles.Admin)]
     public async Task<IActionResult> Register([FromBody] TagRegisterRequest request)
     {
         var response = await _tagService.RegisterTagsAsync(request);

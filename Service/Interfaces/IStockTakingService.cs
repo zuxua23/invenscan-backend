@@ -10,6 +10,6 @@ public interface IStockTakingService
     Task<ApiResponse<StockTakingResponse>> GetActiveSessionAsync();
     Task<ApiResponse<List<StockTakingDetailResponse>>> GetSessionTagsAsync(int sttId);
     Task<ApiResponse<List<TagResponse>>> GetAvailableTagsAsync(int sttId);
-    Task<ApiResponse<StockTakingResponse>> OperatorSubmitAsync(StockTakingOperatorSubmitRequest request);
+    Task<ApiResponse<StockTakingResponse>> OperatorSubmitAsync(StockTakingOperatorSubmitRequest request, string operatorId);
     Task<ApiResponse<StockTakingResponse>> CloseSessionAsync(int sttId, string closedBy);
 }

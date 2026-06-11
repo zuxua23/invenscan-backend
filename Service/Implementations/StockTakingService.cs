@@ -180,7 +180,7 @@ public class StockTakingService : IStockTakingService
         }
     }
 
-    public async Task<ApiResponse<StockTakingResponse>> OperatorSubmitAsync(StockTakingOperatorSubmitRequest request)
+    public async Task<ApiResponse<StockTakingResponse>> OperatorSubmitAsync(StockTakingOperatorSubmitRequest request, string operatorId)
     {
         try
         {
@@ -191,24 +191,20 @@ public class StockTakingService : IStockTakingService
             if (session == null)
                 return ApiResponse<StockTakingResponse>.Fail("Active session not found.");
 
-            var scannedTagIds = await _context.Tags
-                .Where(t => request.ScannedEpcs.Contains(t.EpcTag))
-                .Select(t => t.Id)
-                .ToListAsync();
+            var scannedTagIds = new HashSet<int>();
+            foreach (var scan in request.ScannedTags)
+            {
+                if (scan.Action == AppConstants.StockTakingAction.Scan && int.TryParse(scan.TagId, out var tagId))
+                    scannedTagIds.Add(tagId);
+            }
 
             foreach (var detail in session.Details)
             {
-                if (scannedTagIds.Contains(detail.TagId))
-                {
-                    detail.Action = AppConstants.StockTakingAction.Scan;
+                var isScanned = scannedTagIds.Contains(detail.TagId);
+                detail.Action = isScanned ? AppConstants.StockTakingAction.Scan : AppConstants.StockTakingAction.Missing;
+                detail.CreatedBy = operatorId;
+                if (isScanned)
                     detail.ScannedAt = DateTime.UtcNow;
-                    detail.CreatedBy = request.OperatorId;
-                }
-                else
-                {
-                    detail.Action = AppConstants.StockTakingAction.Missing;
-                    detail.CreatedBy = request.OperatorId;
-                }
             }
 
             await _context.SaveChangesAsync();

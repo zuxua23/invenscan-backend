@@ -1,4 +1,5 @@
 using InvenScan.Service.Interfaces;
+using InvenScan.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,7 +7,7 @@ namespace InvenScan.Controllers.Api;
 
 [ApiController]
 [Route("api/location")]
-[Authorize]
+[Authorize(AuthenticationSchemes = AppConstants.AuthSchemes.Jwt)]
 public class LocationApiController : ControllerBase
 {
     private readonly ILocationService _locationService;

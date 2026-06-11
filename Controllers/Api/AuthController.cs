@@ -1,6 +1,8 @@
 using InvenScan.DTO.Request;
 using InvenScan.Service.Interfaces;
+using InvenScan.Utility;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace InvenScan.Controllers.Api;
 
@@ -17,6 +19,7 @@ public class AuthController : ControllerBase
 
     /// <summary>Authenticate user and return JWT token.</summary>
     [HttpPost("login")]
+    [EnableRateLimiting(AppConstants.RateLimitPolicies.Auth)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var response = await _authService.LoginAsync(request);

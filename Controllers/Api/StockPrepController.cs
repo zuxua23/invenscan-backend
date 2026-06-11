@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using InvenScan.DTO.Request;
 using InvenScan.Service.Interfaces;
+using InvenScan.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,7 @@ namespace InvenScan.Controllers.Api;
 
 [ApiController]
 [Route("api/stockprep")]
-[Authorize]
+[Authorize(AuthenticationSchemes = AppConstants.AuthSchemes.Jwt)]
 public class StockPrepController : ControllerBase
 {
     private readonly IStockPrepService _stockPrepService;

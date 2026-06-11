@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using InvenScan.DTO.Request;
 using InvenScan.Service.Interfaces;
+using InvenScan.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,7 @@ namespace InvenScan.Controllers.Api;
 
 [ApiController]
 [Route("api/stock-taking")]
-[Authorize]
+[Authorize(AuthenticationSchemes = AppConstants.AuthSchemes.Jwt)]
 public class StockTakingController : ControllerBase
 {
     private readonly IStockTakingService _stockTakingService;
@@ -20,7 +21,7 @@ public class StockTakingController : ControllerBase
 
     /// <summary>Create a new stock taking session.</summary>
     [HttpPost]
-    [Authorize(Roles = "ADMIN")]
+    [Authorize(AuthenticationSchemes = AppConstants.AuthSchemes.Jwt, Roles = AppConstants.Roles.Admin)]
     public async Task<IActionResult> Create([FromBody] StockTakingCreateRequest request)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
@@ -73,7 +74,8 @@ public class StockTakingController : ControllerBase
     [HttpPost("operator-submit")]
     public async Task<IActionResult> OperatorSubmit([FromBody] StockTakingOperatorSubmitRequest request)
     {
-        var response = await _stockTakingService.OperatorSubmitAsync(request);
+        var operatorId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        var response = await _stockTakingService.OperatorSubmitAsync(request, operatorId);
         if (!response.Success)
             return BadRequest(response);
 
