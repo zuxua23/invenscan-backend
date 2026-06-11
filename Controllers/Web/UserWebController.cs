@@ -11,10 +11,12 @@ namespace InvenScan.Controllers.Web;
 public class UserWebController : Controller
 {
     private readonly IUserService _userService;
+    private readonly IActivityLogService _activityLogService;
 
-    public UserWebController(IUserService userService)
+    public UserWebController(IUserService userService, IActivityLogService activityLogService)
     {
         _userService = userService;
+        _activityLogService = activityLogService;
     }
 
     [HttpGet("")]
@@ -25,19 +27,28 @@ public class UserWebController : Controller
     }
 
     [HttpGet("create")]
-    public IActionResult Create() => View();
+    public IActionResult Create() => RedirectToAction(nameof(Index));
 
     [HttpPost("create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(UserCreateRequest request)
     {
+        var isAjax = Request.Headers.ContainsKey("X-Requested-With");
         var result = await _userService.CreateUserAsync(request);
+
         if (!result.Success)
         {
-            ViewData["Error"] = result.Message;
-            return View(request);
+            if (isAjax) return Json(new { success = false, message = result.Message });
+            TempData["Error"] = result.Message;
+            return RedirectToAction(nameof(Index));
         }
 
+        var userId = User.Identity?.Name ?? "admin";
+        await _activityLogService.LogAsync(userId, userId, "CREATE", "Users",
+            $"Created user {request.UserId}",
+            ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString());
+
+        if (isAjax) return Json(new { success = true, message = "User created successfully." });
         TempData["Success"] = "User created successfully.";
         return RedirectToAction(nameof(Index));
     }
@@ -46,23 +57,30 @@ public class UserWebController : Controller
     public async Task<IActionResult> Edit(string userId)
     {
         var result = await _userService.GetByUserIdAsync(userId);
-        if (!result.Success)
-            return NotFound();
-
-        return View(result.Data);
+        if (!result.Success) return NotFound();
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpPost("edit/{userId}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(string userId, UserUpdateRequest request)
     {
+        var isAjax = Request.Headers.ContainsKey("X-Requested-With");
         var result = await _userService.UpdateUserAsync(userId, request);
+
         if (!result.Success)
         {
-            ViewData["Error"] = result.Message;
-            return View();
+            if (isAjax) return Json(new { success = false, message = result.Message });
+            TempData["Error"] = result.Message;
+            return RedirectToAction(nameof(Index));
         }
 
+        var currentUser = User.Identity?.Name ?? "admin";
+        await _activityLogService.LogAsync(currentUser, currentUser, "UPDATE", "Users",
+            $"Updated user {userId}",
+            ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString());
+
+        if (isAjax) return Json(new { success = true, message = "User updated successfully." });
         TempData["Success"] = "User updated successfully.";
         return RedirectToAction(nameof(Index));
     }

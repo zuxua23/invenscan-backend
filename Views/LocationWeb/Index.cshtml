@@ -6,9 +6,9 @@
     <h1 class="page-title">Locations</h1>
     @if (User.IsInRole("ADMIN"))
     {
-        <a asp-controller="LocationWeb" asp-action="Create" class="btn btn-primary btn-sm">
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createLocModal">
             <i class="bi bi-plus-lg me-1"></i>Add Location
-        </a>
+        </button>
     }
 </div>
 
@@ -38,18 +38,18 @@
                     {
                         <td>
                             <div class="d-flex gap-1">
-                                <a asp-controller="LocationWeb" asp-action="Edit" asp-route-id="@loc.Id"
-                                   class="btn btn-sm btn-outline-secondary py-0">
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 btn-edit-loc"
+                                        data-id="@loc.Id"
+                                        data-code="@loc.LocationCode"
+                                        data-name="@loc.LocationName"
+                                        data-desc="@(loc.Description ?? "")">
                                     <i class="bi bi-pencil"></i>
-                                </a>
-                                <form asp-controller="LocationWeb" asp-action="Delete" asp-route-id="@loc.Id"
-                                      method="post" class="d-inline"
-                                      onsubmit="return confirm('Delete @loc.LocationCode?')">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger py-0 btn-delete-loc"
+                                        data-label="@loc.LocationCode"
+                                        data-delete-url="/locations/delete/@loc.Id">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </div>
                         </td>
                     }
@@ -59,6 +59,133 @@
     </table>
 </div>
 
+@if (User.IsInRole("ADMIN"))
+{
+    <!-- Create Location Modal -->
+    <div class="modal fade" id="createLocModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header is-dark">
+                    <h5 class="modal-title"><i class="bi bi-geo-alt me-2"></i>Add Location</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="createLocForm" action="/locations/create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Location Code <span style="color:var(--danger)">*</span></label>
+                            <input name="LocationCode" class="form-control" placeholder="e.g. LOC-004" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location Name <span style="color:var(--danger)">*</span></label>
+                            <input name="LocationName" class="form-control" placeholder="Location display name" required />
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">Description</label>
+                            <textarea name="Description" class="form-control" rows="2" placeholder="Optional description"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Save Location</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Location Modal -->
+    <div class="modal fade" id="editLocModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header is-dark">
+                    <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Location</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editLocForm" action="/locations/edit/0" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Location Code <span style="color:var(--danger)">*</span></label>
+                            <input id="editLocCode" name="LocationCode" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location Name <span style="color:var(--danger)">*</span></label>
+                            <input id="editLocName" name="LocationName" class="form-control" required />
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">Description</label>
+                            <textarea id="editLocDesc" name="Description" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Update Location</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteLocModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header is-dark">
+                    <h5 class="modal-title"><i class="bi bi-trash me-2"></i>Confirm Delete</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="font-size:13px;">
+                    Delete location <strong id="deleteLocLabel"></strong>? This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteLocForm" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @section Scripts {
-    <script>$(document).ready(function () { $('#locationTable').DataTable({ pageLength: 25 }); });</script>
+    <script>
+        $(document).ready(function () { $('#locationTable').DataTable({ pageLength: 25 }); });
+
+        bindModalForm('createLocForm', 'createLocModal');
+        bindModalForm('editLocForm', 'editLocModal');
+        setupDeleteButtons('.btn-delete-loc', 'deleteLocModal', 'deleteLocForm', 'deleteLocLabel');
+
+        var deleteForm = document.getElementById('deleteLocForm');
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var token = deleteForm.querySelector('[name="__RequestVerificationToken"]').value;
+                fetch(deleteForm.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'RequestVerificationToken': token },
+                    body: new FormData(deleteForm)
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteLocModal')).hide();
+                    showToast(d.message, d.success ? 'success' : 'error');
+                    if (d.success) setTimeout(function () { location.reload(); }, 600);
+                });
+            });
+        }
+
+        document.querySelectorAll('.btn-edit-loc').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = this.dataset.id;
+                document.getElementById('editLocCode').value = this.dataset.code;
+                document.getElementById('editLocName').value = this.dataset.name;
+                document.getElementById('editLocDesc').value = this.dataset.desc || '';
+                document.getElementById('editLocForm').action = '/locations/edit/' + id;
+                new bootstrap.Modal(document.getElementById('editLocModal')).show();
+            });
+        });
+    </script>
 }

@@ -1,0 +1,143 @@
+@using InvenScan.Entity
+@model List<ActivityLog>
+@{ ViewData["Title"] = "Activity Log"; }
+
+<div class="page-header">
+    <h1 class="page-title">Activity Log</h1>
+    <a href="/activity-log/export-csv?userId=@ViewBag.FilterUserId&platform=@ViewBag.FilterPlatform&module=@ViewBag.FilterModule&from=@ViewBag.FilterFrom&to=@ViewBag.FilterTo"
+       class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-download me-1"></i>Export CSV
+    </a>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar mb-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-sm-2">
+            <label class="form-label mb-1" style="font-size:11px">User ID</label>
+            <input name="userId" class="form-control form-control-sm" placeholder="Filter by user" value="@ViewBag.FilterUserId" />
+        </div>
+        <div class="col-sm-2">
+            <label class="form-label mb-1" style="font-size:11px">Platform</label>
+            <select name="platform" class="form-select form-select-sm">
+                <option value="">All Platforms</option>
+                <option value="WEB" selected="@(ViewBag.FilterPlatform == "WEB" ? "selected" : null)">WEB</option>
+                <option value="ANDROID" selected="@(ViewBag.FilterPlatform == "ANDROID" ? "selected" : null)">ANDROID</option>
+            </select>
+        </div>
+        <div class="col-sm-2">
+            <label class="form-label mb-1" style="font-size:11px">Module</label>
+            <select name="module" class="form-select form-select-sm">
+                <option value="">All Modules</option>
+                @foreach (var mod in new[] { "Auth", "Items", "Locations", "Users", "StockTaking", "StockPrep" })
+                {
+                    <option value="@mod" selected="@(ViewBag.FilterModule == mod ? "selected" : null)">@mod</option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-2">
+            <label class="form-label mb-1" style="font-size:11px">From Date</label>
+            <input name="from" type="date" class="form-control form-control-sm" value="@ViewBag.FilterFrom" />
+        </div>
+        <div class="col-sm-2">
+            <label class="form-label mb-1" style="font-size:11px">To Date</label>
+            <input name="to" type="date" class="form-control form-control-sm" value="@ViewBag.FilterTo" />
+        </div>
+        <div class="col-sm-2 d-flex gap-2">
+            <button type="submit" class="btn btn-sm btn-primary flex-grow-1"><i class="bi bi-search me-1"></i>Filter</button>
+            <a href="/activity-log" class="btn btn-sm btn-outline-secondary">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Auto-delete settings -->
+<div class="is-card mb-3 p-3">
+    <form asp-controller="ActivityLogWeb" asp-action="SaveSettings" method="post" class="d-flex align-items-center gap-3 flex-wrap">
+        @Html.AntiForgeryToken()
+        <span style="font-size:12px;font-weight:600;color:var(--text-secondary)"><i class="bi bi-gear me-1"></i>Auto-delete logs older than</span>
+        <div class="d-flex align-items-center gap-2">
+            <input name="autoDeleteDays" type="number" class="form-control form-control-sm" style="width:80px"
+                   value="@ViewBag.AutoDeleteDays" min="1" max="9999" />
+            <span style="font-size:12px;color:var(--text-hint)">days</span>
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Save</button>
+        <span style="font-size:11px;color:var(--text-hint)">Total logs: @ViewBag.Total</span>
+    </form>
+</div>
+
+<div class="is-card">
+    <table class="table table-hover mb-0" style="font-size:12px">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Module</th>
+                <th>Description</th>
+                <th>Platform</th>
+                <th>IP Address</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="8" class="text-center py-4" style="color:var(--text-hint)">No activity logs found.</td></tr>
+            }
+            @foreach (var log in Model)
+            {
+                <tr>
+                    <td style="color:var(--text-hint)">@log.Id</td>
+                    <td><code style="font-size:11px">@log.UserId</code></td>
+                    <td>
+                        @{
+                            var actionClass = log.Action.Contains("FAILED") ? "badge-danger"
+                                : log.Action == "LOGIN" || log.Action == "CREATE" ? "badge-teal"
+                                : log.Action == "DELETE" ? "badge-danger"
+                                : log.Action == "LOGOUT" ? "badge-gray"
+                                : "badge-warning";
+                        }
+                        <span class="@actionClass">@log.Action</span>
+                    </td>
+                    <td style="color:var(--text-secondary)">@log.Module</td>
+                    <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="@log.Description">
+                        @log.Description
+                    </td>
+                    <td>
+                        @if (log.Platform == "ANDROID")
+                        { <span class="badge-navy">ANDROID</span> }
+                        else
+                        { <span class="badge-gray">WEB</span> }
+                    </td>
+                    <td style="color:var(--text-hint);font-size:11px">@(log.IpAddress ?? "—")</td>
+                    <td style="color:var(--text-hint);font-size:11px;white-space:nowrap">@log.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if ((int)ViewBag.TotalPages > 1)
+{
+    <nav class="mt-3">
+        <ul class="pagination pagination-sm is-pagination justify-content-center mb-0">
+            @{
+                var currentPage = (int)ViewBag.Page;
+                var totalPages = (int)ViewBag.TotalPages;
+                var baseUrl = $"/activity-log?userId={ViewBag.FilterUserId}&platform={ViewBag.FilterPlatform}&module={ViewBag.FilterModule}&from={ViewBag.FilterFrom}&to={ViewBag.FilterTo}";
+            }
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link" href="@baseUrl&page=@(currentPage - 1)">‹</a>
+            </li>
+            @for (var p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+            {
+                <li class="page-item @(p == currentPage ? "active" : "")">
+                    <a class="page-link" href="@baseUrl&page=@p">@p</a>
+                </li>
+            }
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link" href="@baseUrl&page=@(currentPage + 1)">›</a>
+            </li>
+        </ul>
+    </nav>
+}

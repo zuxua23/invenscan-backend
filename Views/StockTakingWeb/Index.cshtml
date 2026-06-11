@@ -4,23 +4,13 @@
 
 <div class="page-header">
     <h1 class="page-title">Stock Taking</h1>
+    @if (User.IsInRole("ADMIN"))
+    {
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createSttModal">
+            <i class="bi bi-plus-lg me-1"></i>New Session
+        </button>
+    }
 </div>
-
-@if (User.IsInRole("ADMIN"))
-{
-    <div class="session-create-bar">
-        <form asp-controller="StockTakingWeb" asp-action="Create" method="post" class="d-flex gap-2 align-items-end w-100">
-            @Html.AntiForgeryToken()
-            <div class="flex-grow-1">
-                <label class="form-label mb-1">New Session Remark <span style="color:var(--text-hint);font-weight:400">(optional)</span></label>
-                <input name="remark" class="form-control" placeholder="e.g. Monthly stock check Q1 2026" />
-            </div>
-            <button type="submit" class="btn btn-primary btn-sm" style="white-space:nowrap">
-                <i class="bi bi-plus-lg me-1"></i>Create Session
-            </button>
-        </form>
-    </div>
-}
 
 <div class="is-card">
     <table id="sttTable" class="table table-hover mb-0">
@@ -43,14 +33,8 @@
                     <td><code>@s.SessionCode</code></td>
                     <td style="color:var(--text-secondary)">@s.Remark</td>
                     <td>
-                        @if (s.Status == "OPEN")
-                        {
-                            <span class="badge-teal">OPEN</span>
-                        }
-                        else
-                        {
-                            <span class="badge-gray">CLOSED</span>
-                        }
+                        @if (s.Status == "OPEN") { <span class="badge-teal">OPEN</span> }
+                        else { <span class="badge-gray">CLOSED</span> }
                     </td>
                     <td>@s.TotalItems</td>
                     <td style="color:var(--teal);font-weight:600">@s.ScannedItems</td>
@@ -64,14 +48,10 @@
                             </a>
                             @if (s.Status == "OPEN" && User.IsInRole("ADMIN"))
                             {
-                                <form asp-controller="StockTakingWeb" asp-action="Close" asp-route-id="@s.Id"
-                                      method="post" class="d-inline"
-                                      onsubmit="return confirm('Close session @s.SessionCode?')">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-warning py-0">
-                                        <i class="bi bi-lock"></i>
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-warning py-0 btn-close-stt"
+                                        data-id="@s.Id" data-code="@s.SessionCode">
+                                    <i class="bi bi-lock"></i>
+                                </button>
                             }
                         </div>
                     </td>
@@ -81,6 +61,89 @@
     </table>
 </div>
 
+@if (User.IsInRole("ADMIN"))
+{
+    <!-- Create Session Modal -->
+    <div class="modal fade" id="createSttModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header is-dark">
+                    <h5 class="modal-title"><i class="bi bi-clipboard-plus me-2"></i>New Stock Taking Session</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="createSttForm" action="/stock-taking/create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="mb-0">
+                            <label class="form-label">Session Remark <span style="color:var(--text-hint);font-weight:400">(optional)</span></label>
+                            <input name="remark" class="form-control" placeholder="e.g. Monthly stock check Q1 2026" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Create Session</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Close Session Confirmation Modal -->
+    <div class="modal fade" id="closeSttModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header is-dark">
+                    <h5 class="modal-title"><i class="bi bi-lock me-2"></i>Close Session</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="font-size:13px;">
+                    Close session <strong id="closeSttCode"></strong>? This cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="closeSttForm" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-lock me-1"></i>Close</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @section Scripts {
-    <script>$(document).ready(function () { $('#sttTable').DataTable({ order: [[6, 'desc']], pageLength: 25 }); });</script>
+    <script>
+        $(document).ready(function () { $('#sttTable').DataTable({ order: [[6, 'desc']], pageLength: 25 }); });
+
+        bindModalForm('createSttForm', 'createSttModal');
+
+        document.querySelectorAll('.btn-close-stt').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = this.dataset.id;
+                var code = this.dataset.code;
+                document.getElementById('closeSttCode').textContent = code;
+                document.getElementById('closeSttForm').action = '/stock-taking/close/' + id;
+                new bootstrap.Modal(document.getElementById('closeSttModal')).show();
+            });
+        });
+
+        var closeSttForm = document.getElementById('closeSttForm');
+        if (closeSttForm) {
+            closeSttForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var token = closeSttForm.querySelector('[name="__RequestVerificationToken"]').value;
+                fetch(closeSttForm.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'RequestVerificationToken': token },
+                    body: new FormData(closeSttForm)
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    bootstrap.Modal.getInstance(document.getElementById('closeSttModal')).hide();
+                    showToast(d.message, d.success ? 'success' : 'error');
+                    if (d.success) setTimeout(function () { location.reload(); }, 600);
+                });
+            });
+        }
+    </script>
 }
