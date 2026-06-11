@@ -56,5 +56,11 @@ public static class AppConstants
     public static class AuthSchemes
     {
         public const string Cookie = "CookieAuth";
+        public const string Jwt = "Bearer";
+    }
+
+    public static class RateLimitPolicies
+    {
+        public const string Auth = "auth";
     }
 }

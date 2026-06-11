@@ -4,7 +4,7 @@ public class StockInSubmitRequest
 {
     public int LocationId { get; set; }
     public string Notes { get; set; } = string.Empty;
-    public List<StockInScanItem> Items { get; set; } = new();
+    public List<StockInScanItem> Details { get; set; } = new();
 }
 
 public class StockInScanItem

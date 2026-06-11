@@ -54,21 +54,20 @@ public class SearchItemService : ISearchItemService
         }
     }
 
-    private static SearchItemResponse MapToResponse(Entity.Item item) => new()
+    private static SearchItemResponse MapToResponse(Entity.Item item)
     {
-        ItemId = item.Id,
-        ItemCode = item.ItemCode,
-        ItemName = item.ItemName,
-        Description = item.Description,
-        Unit = item.Unit,
-        MinStock = item.MinStock,
-        Tags = item.Tags.Select(t => new TagSummary
+        var representativeTag = item.Tags.FirstOrDefault();
+        return new SearchItemResponse
         {
-            TagId = t.Id,
-            EpcTag = t.EpcTag,
-            Status = t.Status,
-            LocationCode = t.Location?.LocationCode ?? string.Empty,
-            LocationName = t.Location?.LocationName ?? string.Empty
-        }).ToList()
-    };
+            Id = item.Id,
+            ItemCode = item.ItemCode,
+            ItemName = item.ItemName,
+            Description = item.Description,
+            Unit = item.Unit,
+            MinStock = item.MinStock,
+            LocationName = representativeTag?.Location?.LocationName,
+            Status = representativeTag?.Status,
+            EpcTag = representativeTag?.EpcTag
+        };
+    }
 }

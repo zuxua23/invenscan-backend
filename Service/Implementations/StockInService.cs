@@ -78,7 +78,7 @@ public class StockInService : IStockInService
     {
         try
         {
-            if (request.Items == null || request.Items.Count == 0)
+            if (request.Details == null || request.Details.Count == 0)
                 return ApiResponse<StockInResponse>.Fail("At least one item is required.");
 
             var locationExists = await _context.Locations.AnyAsync(l => l.Id == request.LocationId && !l.IsDelete);
@@ -94,7 +94,7 @@ public class StockInService : IStockInService
                 Notes = request.Notes,
                 CreatedBy = createdBy,
                 Status = AppConstants.StockInStatus.Synced,
-                Details = request.Items.Select(i => new StockInDetail
+                Details = request.Details.Select(i => new StockInDetail
                 {
                     TagId = i.TagId,
                     ItemId = i.ItemId,

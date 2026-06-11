@@ -103,12 +103,12 @@ public class StockPrepService : IStockPrepService
             if (doc == null)
                 return ApiResponse<StockPrepResponse>.Fail("Open stock prep document not found.");
 
-            foreach (var pickItem in request.ScannedItems)
+            foreach (var pickItem in request.Items)
             {
                 var detail = doc.Details.FirstOrDefault(d => d.Id == pickItem.DetailId);
                 if (detail == null) continue;
 
-                detail.PickedQty++;
+                detail.PickedQty = pickItem.PickedQty > 0 ? pickItem.PickedQty : detail.PickedQty + 1;
                 detail.ScannedCode = pickItem.ScannedCode;
                 detail.UpdatedAt = DateTime.UtcNow;
 

@@ -159,7 +159,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"locationId\": 1,\n  \"notes\": \"Received from supplier\",\n  \"items\": [\n    {\n      \"tagId\": 1,\n      \"itemId\": 1,\n      \"scannedCode\": \"E200000000001\",\n      \"scanType\": \"RFID\"\n    },\n    {\n      \"tagId\": null,\n      \"itemId\": 2,\n      \"scannedCode\": \"ITM-002\",\n      \"scanType\": \"BARCODE\"\n    }\n  ]\n}"
+              "raw": "{\n  \"locationId\": 1,\n  \"notes\": \"Received from supplier\",\n  \"details\": [\n    {\n      \"itemId\": 1,\n      \"scannedCode\": \"E2000017221101441890A1B1\",\n      \"scanType\": \"RFID\"\n    },\n    {\n      \"itemId\": 2,\n      \"scannedCode\": \"ITM-002\",\n      \"scanType\": \"BARCODE\"\n    }\n  ]\n}"
             },
             "description": "Submit a stock-in transaction."
           }
@@ -235,9 +235,9 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sttId\": 1,\n  \"scannedEpcs\": [\"E200000000001\", \"E200000000002\"],\n  \"operatorId\": \"operator1\"\n}"
+              "raw": "{\n  \"sttId\": 1,\n  \"scannedTags\": [\n    {\n      \"tagId\": \"1\",\n      \"itemId\": 1,\n      \"action\": \"SCAN\",\n      \"scannedAt\": 1749600000000\n    },\n    {\n      \"tagId\": \"2\",\n      \"itemId\": 2,\n      \"action\": \"MISSING\",\n      \"scannedAt\": 1749600000000\n    }\n  ]\n}"
             },
-            "description": "Submit scan results from handheld device. Tags not in scannedEpcs → MISSING."
+            "description": "Submit scan results from the handheld. tagId is the session tag id (from GET tags). Session tags whose id is not present with action SCAN are marked MISSING. The operator is taken from the JWT, not the body."
           }
         }
       ]
@@ -269,7 +269,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"stockPrepId\": 1,\n  \"scannedItems\": [\n    {\n      \"detailId\": 1,\n      \"scannedCode\": \"E200000000001\",\n      \"scanType\": \"RFID\"\n    }\n  ],\n  \"operatorId\": \"operator1\"\n}"
+              "raw": "{\n  \"stockPrepId\": 1,\n  \"items\": [\n    {\n      \"detailId\": 1,\n      \"scannedCode\": \"ITM-001\",\n      \"scanType\": \"BARCODE\",\n      \"pickedQty\": 1\n    }\n  ]\n}"
             },
             "description": "Submit picked items from handheld device."
           }

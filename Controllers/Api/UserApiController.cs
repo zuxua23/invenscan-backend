@@ -1,5 +1,6 @@
 using InvenScan.DTO.Request;
 using InvenScan.Service.Interfaces;
+using InvenScan.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +8,7 @@ namespace InvenScan.Controllers.Api;
 
 [ApiController]
 [Route("api/user")]
-[Authorize(Roles = "ADMIN")]
+[Authorize(AuthenticationSchemes = AppConstants.AuthSchemes.Jwt, Roles = AppConstants.Roles.Admin)]
 public class UserApiController : ControllerBase
 {
     private readonly IUserService _userService;
