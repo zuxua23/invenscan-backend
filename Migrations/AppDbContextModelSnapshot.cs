@@ -521,7 +521,7 @@ namespace InvenScan.Migrations
                     b.HasOne("InvenScan.Entity.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("InvenScan.Entity.StockTaking", "StockTaking")
@@ -533,7 +533,7 @@ namespace InvenScan.Migrations
                     b.HasOne("InvenScan.Entity.Tag", "Tag")
                         .WithMany()
                         .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Item");

@@ -79,8 +79,8 @@ public class AppDbContext : DbContext
             entity.ToTable("tb_StockTakingDetail");
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.StockTaking).WithMany(s => s.Details).HasForeignKey(e => e.SttId);
-            entity.HasOne(e => e.Tag).WithMany().HasForeignKey(e => e.TagId);
-            entity.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId);
+            entity.HasOne(e => e.Tag).WithMany().HasForeignKey(e => e.TagId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.NoAction);
             entity.Property(e => e.Action).HasMaxLength(20);
         });
 

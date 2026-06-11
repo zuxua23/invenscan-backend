@@ -253,7 +253,7 @@ namespace InvenScan.Migrations
                         column: x => x.ItemId,
                         principalTable: "tb_Item",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_tb_StockTakingDetail_tb_StockTaking_SttId",
                         column: x => x.SttId,
@@ -265,7 +265,7 @@ namespace InvenScan.Migrations
                         column: x => x.TagId,
                         principalTable: "tb_Tag",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateIndex(
