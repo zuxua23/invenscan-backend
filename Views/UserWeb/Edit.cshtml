@@ -2,41 +2,52 @@
 @model UserResponse
 @{ ViewData["Title"] = "Edit User"; }
 
+<div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+        <a asp-controller="UserWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="page-title mb-0">Edit User</h1>
+    </div>
+</div>
+
 <div style="max-width:480px">
-    <a asp-controller="UserWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
-        <i class="bi bi-arrow-left me-1"></i>Back
-    </a>
     <div class="card p-4">
         @if (ViewData["Error"] != null)
         {
-            <div class="alert alert-danger py-2 small">@ViewData["Error"]</div>
+            <div class="alert-is alert-is-danger mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>@ViewData["Error"]
+            </div>
         }
         <div class="mb-3">
-            <label class="form-label fw-semibold small">Username</label>
-            <input class="form-control" value="@Model.UserId" disabled />
+            <label class="form-label">Username</label>
+            <input class="form-control" value="@Model.UserId" disabled style="background:var(--surface);color:var(--text-hint)" />
         </div>
         <form asp-controller="UserWeb" asp-action="Edit" asp-route-userId="@Model.UserId" method="post">
             @Html.AntiForgeryToken()
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Full Name</label>
+                <label class="form-label">Full Name</label>
                 <input name="FullName" class="form-control" value="@Model.FullName" />
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Role</label>
+                <label class="form-label">Role</label>
                 <select name="Role" class="form-select">
                     @if (Model.Role == "OPERATOR") { <option value="OPERATOR" selected>OPERATOR</option> } else { <option value="OPERATOR">OPERATOR</option> }
                     @if (Model.Role == "ADMIN") { <option value="ADMIN" selected>ADMIN</option> } else { <option value="ADMIN">ADMIN</option> }
                 </select>
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Status</label>
+                <label class="form-label">Status</label>
                 <select name="IsActive" class="form-select">
                     @if (Model.IsActive) { <option value="true" selected>Active</option> } else { <option value="true">Active</option> }
                     @if (!Model.IsActive) { <option value="false" selected>Inactive</option> } else { <option value="false">Inactive</option> }
                 </select>
             </div>
-            <div class="mb-3">
-                <label class="form-label fw-semibold small">New Password <span class="text-muted small">(leave blank to keep)</span></label>
+            <div class="mb-4">
+                <label class="form-label">
+                    New Password
+                    <span style="color:var(--text-hint);font-weight:400">(leave blank to keep)</span>
+                </label>
                 <input name="NewPassword" type="password" class="form-control" placeholder="Enter new password to change" minlength="6" />
             </div>
             <button type="submit" class="btn btn-primary w-100">

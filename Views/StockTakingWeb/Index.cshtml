@@ -2,58 +2,62 @@
 @model List<StockTakingResponse>
 @{ ViewData["Title"] = "Stock Taking"; }
 
+<div class="page-header">
+    <h1 class="page-title">Stock Taking</h1>
+</div>
+
 @if (User.IsInRole("ADMIN"))
 {
-    <div class="card p-3 mb-3">
-        <form asp-controller="StockTakingWeb" asp-action="Create" method="post" class="d-flex gap-2 align-items-end">
+    <div class="session-create-bar">
+        <form asp-controller="StockTakingWeb" asp-action="Create" method="post" class="d-flex gap-2 align-items-end w-100">
             @Html.AntiForgeryToken()
             <div class="flex-grow-1">
-                <label class="form-label fw-semibold small mb-1">New Session Remark (optional)</label>
-                <input name="remark" class="form-control form-control-sm" placeholder="e.g. Monthly stock check Q1 2026" />
+                <label class="form-label mb-1">New Session Remark <span style="color:var(--text-hint);font-weight:400">(optional)</span></label>
+                <input name="remark" class="form-control" placeholder="e.g. Monthly stock check Q1 2026" />
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">
+            <button type="submit" class="btn btn-primary btn-sm" style="white-space:nowrap">
                 <i class="bi bi-plus-lg me-1"></i>Create Session
             </button>
         </form>
     </div>
 }
 
-<div class="card">
-    <div class="card-body p-0">
-        <table id="sttTable" class="table table-hover mb-0">
-            <thead>
+<div class="is-card">
+    <table id="sttTable" class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Session Code</th>
+                <th>Remark</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th>Scanned</th>
+                <th>Missing</th>
+                <th>Created</th>
+                <th style="width:100px">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in Model)
+            {
                 <tr>
-                    <th>Session Code</th>
-                    <th>Remark</th>
-                    <th>Status</th>
-                    <th>Total</th>
-                    <th>Scanned</th>
-                    <th>Missing</th>
-                    <th>Created</th>
-                    <th style="width:120px">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var s in Model)
-                {
-                    <tr>
-                        <td><code>@s.SessionCode</code></td>
-                        <td class="text-muted">@s.Remark</td>
-                        <td>
-                            @if (s.Status == "OPEN")
-                            {
-                                <span class="badge bg-success">OPEN</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary">CLOSED</span>
-                            }
-                        </td>
-                        <td>@s.TotalItems</td>
-                        <td class="text-success fw-semibold">@s.ScannedItems</td>
-                        <td class="text-danger fw-semibold">@s.MissingItems</td>
-                        <td class="text-muted small">@s.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td>
+                    <td><code>@s.SessionCode</code></td>
+                    <td style="color:var(--text-secondary)">@s.Remark</td>
+                    <td>
+                        @if (s.Status == "OPEN")
+                        {
+                            <span class="badge-teal">OPEN</span>
+                        }
+                        else
+                        {
+                            <span class="badge-gray">CLOSED</span>
+                        }
+                    </td>
+                    <td>@s.TotalItems</td>
+                    <td style="color:var(--teal);font-weight:600">@s.ScannedItems</td>
+                    <td style="color:var(--danger);font-weight:600">@s.MissingItems</td>
+                    <td style="color:var(--text-hint);font-size:12px">@s.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>
+                        <div class="d-flex gap-1">
                             <a asp-controller="StockTakingWeb" asp-action="Detail" asp-route-id="@s.Id"
                                class="btn btn-sm btn-outline-primary py-0">
                                 <i class="bi bi-eye"></i>
@@ -69,12 +73,12 @@
                                     </button>
                                 </form>
                             }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
 
 @section Scripts {

@@ -2,31 +2,39 @@
 @model UserCreateRequest
 @{ ViewData["Title"] = "Add User"; }
 
+<div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+        <a asp-controller="UserWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="page-title mb-0">Add User</h1>
+    </div>
+</div>
+
 <div style="max-width:480px">
-    <a asp-controller="UserWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
-        <i class="bi bi-arrow-left me-1"></i>Back
-    </a>
     <div class="card p-4">
         @if (ViewData["Error"] != null)
         {
-            <div class="alert alert-danger py-2 small">@ViewData["Error"]</div>
+            <div class="alert-is alert-is-danger mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>@ViewData["Error"]
+            </div>
         }
         <form asp-controller="UserWeb" asp-action="Create" method="post">
             @Html.AntiForgeryToken()
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Username <span class="text-danger">*</span></label>
+                <label class="form-label">Username <span style="color:var(--danger)">*</span></label>
                 <input name="UserId" class="form-control" value="@Model?.UserId" placeholder="e.g. operator2" required />
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Full Name</label>
+                <label class="form-label">Full Name</label>
                 <input name="FullName" class="form-control" value="@Model?.FullName" placeholder="Display name" />
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Password <span class="text-danger">*</span></label>
+                <label class="form-label">Password <span style="color:var(--danger)">*</span></label>
                 <input name="Password" type="password" class="form-control" placeholder="Minimum 6 characters" required minlength="6" />
             </div>
-            <div class="mb-3">
-                <label class="form-label fw-semibold small">Role</label>
+            <div class="mb-4">
+                <label class="form-label">Role</label>
                 <select name="Role" class="form-select">
                     <option value="OPERATOR" selected>OPERATOR</option>
                     <option value="ADMIN">ADMIN</option>

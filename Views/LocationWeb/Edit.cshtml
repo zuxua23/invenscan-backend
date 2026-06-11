@@ -2,27 +2,35 @@
 @model Location
 @{ ViewData["Title"] = "Edit Location"; }
 
+<div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+        <a asp-controller="LocationWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="page-title mb-0">Edit Location</h1>
+    </div>
+</div>
+
 <div style="max-width:480px">
-    <a asp-controller="LocationWeb" asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
-        <i class="bi bi-arrow-left me-1"></i>Back
-    </a>
     <div class="card p-4">
         @if (ViewData["Error"] != null)
         {
-            <div class="alert alert-danger py-2 small">@ViewData["Error"]</div>
+            <div class="alert-is alert-is-danger mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>@ViewData["Error"]
+            </div>
         }
         <form asp-controller="LocationWeb" asp-action="Edit" asp-route-id="@Model.Id" method="post">
             @Html.AntiForgeryToken()
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Location Code <span class="text-danger">*</span></label>
+                <label class="form-label">Location Code <span style="color:var(--danger)">*</span></label>
                 <input name="LocationCode" class="form-control" value="@Model.LocationCode" required />
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Location Name <span class="text-danger">*</span></label>
+                <label class="form-label">Location Name <span style="color:var(--danger)">*</span></label>
                 <input name="LocationName" class="form-control" value="@Model.LocationName" required />
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Description</label>
+                <label class="form-label">Description</label>
                 <textarea name="Description" class="form-control" rows="2">@Model.Description</textarea>
             </div>
             <button type="submit" class="btn btn-primary w-100">
