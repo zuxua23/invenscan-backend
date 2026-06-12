@@ -6,6 +6,7 @@ using InvenScan.Service.Interfaces;
 using InvenScan.Utility;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddControllers();
+
+builder.Services.AddDataProtection()
+    .SetApplicationName("InvenScan")
+    .UseEphemeralDataProtectionProvider();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
