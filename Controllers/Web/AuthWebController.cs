@@ -62,7 +62,12 @@ public class AuthWebController : Controller
 
         var identity = new ClaimsIdentity(claims, AppConstants.AuthSchemes.Cookie);
         var principal = new ClaimsPrincipal(identity);
-        await HttpContext.SignInAsync(AppConstants.AuthSchemes.Cookie, principal);
+        var authProps = new AuthenticationProperties
+        {
+            IsPersistent = false,
+            AllowRefresh = true
+        };
+        await HttpContext.SignInAsync(AppConstants.AuthSchemes.Cookie, principal, authProps);
 
         await _activityLogService.LogAsync(user.UserId, user.FullName, "LOGIN", "Auth",
             $"User {user.UserId} logged in successfully",

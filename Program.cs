@@ -60,11 +60,12 @@ builder.Services.AddAuthentication(options =>
     options.LoginPath = "/login";
     options.LogoutPath = "/logout";
     options.AccessDeniedPath = "/login";
-    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
     options.SlidingExpiration = true;
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.IsEssential = true;
 });
 
 builder.Services.AddAuthorization();
@@ -113,7 +114,20 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     if (context.Database.IsRelational())
+    {
         context.Database.Migrate();
+        context.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (
+                SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_NAME = 'tb_StockTaking' AND COLUMN_NAME = 'LocationId'
+            )
+            BEGIN
+                ALTER TABLE tb_StockTaking ADD LocationId INT NOT NULL DEFAULT 1;
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_tb_StockTaking_LocationId')
+                    CREATE INDEX IX_tb_StockTaking_LocationId ON tb_StockTaking(LocationId);
+            END
+        ");
+    }
     else
         context.Database.EnsureCreated();
     AppDbSeeder.Seed(context);
