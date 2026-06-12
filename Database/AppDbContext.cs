@@ -19,6 +19,10 @@ public class AppDbContext : DbContext
     public DbSet<StockPrepDetail> StockPrepDetails => Set<StockPrepDetail>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+    public DbSet<StockOut> StockOuts => Set<StockOut>();
+    public DbSet<StockOutDetail> StockOutDetails => Set<StockOutDetail>();
+    public DbSet<GateConfig> GateConfigs => Set<GateConfig>();
+    public DbSet<GateLog> GateLogs => Set<GateLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -146,6 +150,49 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.Key).IsUnique();
             entity.Property(e => e.Key).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Value).HasMaxLength(500).IsRequired();
+        });
+
+        modelBuilder.Entity<StockOut>(entity =>
+        {
+            entity.ToTable("tb_StockOut");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.DocNumber).IsUnique();
+            entity.Property(e => e.DocNumber).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(20);
+            entity.HasOne(e => e.Location).WithMany(l => l.StockOuts).HasForeignKey(e => e.LocationId);
+        });
+
+        modelBuilder.Entity<StockOutDetail>(entity =>
+        {
+            entity.ToTable("tb_StockOutDetail");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.StockOut).WithMany(s => s.Details).HasForeignKey(e => e.StockOutId);
+            entity.HasOne(e => e.Tag).WithMany().HasForeignKey(e => e.TagId).IsRequired(false).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.NoAction);
+            entity.Property(e => e.ScanType).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<GateConfig>(entity =>
+        {
+            entity.ToTable("tb_GateConfig");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.GateCode).IsUnique();
+            entity.HasIndex(e => e.ApiKey).IsUnique();
+            entity.Property(e => e.GateName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.GateCode).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ApiKey).HasMaxLength(100).IsRequired();
+            entity.HasOne(e => e.Location).WithMany().HasForeignKey(e => e.LocationId).IsRequired(false);
+        });
+
+        modelBuilder.Entity<GateLog>(entity =>
+        {
+            entity.ToTable("tb_GateLog");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.EpcTag).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ItemName).HasMaxLength(200);
+            entity.Property(e => e.Status).HasMaxLength(20);
+            entity.HasIndex(e => e.ScannedAt);
+            entity.HasOne(e => e.GateConfig).WithMany(g => g.Logs).HasForeignKey(e => e.GateConfigId);
         });
     }
 }

@@ -1,0 +1,68 @@
+@using InvenScan.Entity
+@model List<StockOut>
+@{ ViewData["Title"] = "Stock Out"; }
+
+<div class="page-header">
+    <h1 class="page-title">Stock Out</h1>
+</div>
+
+<div class="is-card">
+    <table id="stockOutTable" class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Doc Number</th>
+                <th>Location</th>
+                <th>Notes</th>
+                <th>Status</th>
+                <th>Items</th>
+                <th>Created By</th>
+                <th>Date</th>
+                <th style="width:80px">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var doc in Model)
+            {
+                <tr>
+                    <td><code>@doc.DocNumber</code></td>
+                    <td style="color:var(--text-secondary)">
+                        @(doc.Location != null ? $"{doc.Location.LocationCode} — {doc.Location.LocationName}" : "—")
+                    </td>
+                    <td style="color:var(--text-secondary);font-size:12px">
+                        @(string.IsNullOrWhiteSpace(doc.Notes) ? "—" : doc.Notes)
+                    </td>
+                    <td>
+                        @if (doc.Status == "SYNCED")
+                        {
+                            <span class="badge-teal">SYNCED</span>
+                        }
+                        else
+                        {
+                            <span class="badge-warning">PENDING</span>
+                        }
+                    </td>
+                    <td>@doc.Details.Count</td>
+                    <td style="color:var(--text-secondary);font-size:12px">@doc.CreatedBy</td>
+                    <td style="color:var(--text-hint);font-size:12px">@doc.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>
+                        <a href="/stockout/@doc.Id" class="btn btn-sm btn-outline-primary py-0">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="8" class="text-center py-4" style="color:var(--text-hint)">No stock out documents found.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#stockOutTable').DataTable({ order: [[6, 'desc']], pageLength: 25 });
+        });
+    </script>
+}

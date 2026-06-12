@@ -12,4 +12,5 @@ public class Location
 
     public ICollection<Tag> Tags { get; set; } = new List<Tag>();
     public ICollection<StockIn> StockIns { get; set; } = new List<StockIn>();
+    public ICollection<StockOut> StockOuts { get; set; } = new List<StockOut>();
 }

@@ -1,0 +1,146 @@
+@using InvenScan.Entity
+@model List<GateConfig>
+@{ ViewData["Title"] = "Gate Monitor"; }
+
+<div class="page-header">
+    <h1 class="page-title">Gate Monitor</h1>
+    <a href="/gate/create" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>Add Gate
+    </a>
+</div>
+
+<div class="is-card">
+    <table id="gateTable" class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Gate Name</th>
+                <th>Gate Code</th>
+                <th>Location</th>
+                <th>API Key</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th style="width:130px">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var gate in Model)
+            {
+                <tr>
+                    <td style="font-weight:500">@gate.GateName</td>
+                    <td><code>@gate.GateCode</code></td>
+                    <td style="color:var(--text-secondary);font-size:12px">
+                        @if (gate.Location != null)
+                        {
+                            @($"{gate.Location.LocationCode} — {gate.Location.LocationName}")
+                        }
+                        else
+                        {
+                            <span style="color:var(--text-hint)">—</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <code id="apikey-@gate.Id" class="apikey-masked" style="font-size:11px;letter-spacing:1px">
+                                ••••••••••••••••
+                            </code>
+                            <button class="btn-icon-sm" onclick="revealApiKey(@gate.Id, '@gate.ApiKey')" title="Reveal">
+                                <i class="bi bi-eye" id="eye-icon-@gate.Id"></i>
+                            </button>
+                            <button class="btn-icon-sm" onclick="copyApiKey('@gate.ApiKey')" title="Copy">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        @if (gate.IsActive)
+                        {
+                            <span class="badge-teal">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge-gray">Inactive</span>
+                        }
+                    </td>
+                    <td style="color:var(--text-hint);font-size:12px">@gate.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="/gate/@gate.Id/log" class="btn btn-sm btn-outline-primary py-0" title="View Log">
+                                <i class="bi bi-activity"></i>
+                            </a>
+                            <a href="/gate/@gate.Id/edit" class="btn btn-sm btn-outline-secondary py-0" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger py-0" title="Delete"
+                                    onclick="confirmDelete(@gate.Id, '@gate.GateName')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="7" class="text-center py-4" style="color:var(--text-hint)">No gate configurations found.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header is-dark">
+                <h5 class="modal-title"><i class="bi bi-trash me-2"></i>Delete Gate</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:13px;">
+                Delete gate <strong id="deleteGateName"></strong>? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" class="mb-0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="bi bi-trash me-1"></i>Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    $(document).ready(function () {
+        $('#gateTable').DataTable({ order: [[0, 'asc']], pageLength: 25 });
+    });
+
+    var apiKeyVisible = {};
+    function revealApiKey(id, key) {
+        var el = document.getElementById('apikey-' + id);
+        var icon = document.getElementById('eye-icon-' + id);
+        if (apiKeyVisible[id]) {
+            el.textContent = '••••••••••••••••';
+            icon.className = 'bi bi-eye';
+            apiKeyVisible[id] = false;
+        } else {
+            el.textContent = key;
+            icon.className = 'bi bi-eye-slash';
+            apiKeyVisible[id] = true;
+        }
+    }
+
+    function copyApiKey(key) {
+        navigator.clipboard.writeText(key).then(function () {
+            showToast('API key copied to clipboard.', 'success');
+        });
+    }
+
+    function confirmDelete(id, name) {
+        document.getElementById('deleteGateName').textContent = name;
+        document.getElementById('deleteForm').action = '/gate/' + id + '/delete';
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+</script>
+}

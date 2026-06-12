@@ -1,0 +1,135 @@
+@{
+    var gate = (InvenScan.Entity.GateConfig)ViewBag.Gate;
+    ViewData["Title"] = $"Gate Log — {gate.GateName}";
+}
+
+<div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+        <a href="/gate" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+        <div>
+            <h1 class="page-title mb-0">Gate Log</h1>
+            <div style="font-size:11px;color:var(--text-hint)">
+                @gate.GateName
+                @if (!string.IsNullOrWhiteSpace(gate.GateCode))
+                {
+                    <span>· <code>@gate.GateCode</code></span>
+                }
+                @if (gate.Location != null)
+                {
+                    <span>· @gate.Location.LocationName</span>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span id="liveIndicator" class="badge-teal" style="font-size:11px">
+            <i class="bi bi-circle-fill" style="font-size:8px;margin-right:3px"></i>Live · 5s
+        </span>
+        <input type="date" id="dateFilter" class="form-control form-control-sm" style="width:140px"
+               value="@DateTime.Today.ToString("yyyy-MM-dd")" onchange="loadLogs()" />
+    </div>
+</div>
+
+<div class="is-card">
+    <table class="table table-hover mb-0" style="font-size:13px">
+        <thead>
+            <tr>
+                <th style="width:90px">Time</th>
+                <th>EPC Tag</th>
+                <th>Item Name</th>
+                <th style="width:110px">Status</th>
+                <th style="width:80px">Action</th>
+            </tr>
+        </thead>
+        <tbody id="logTableBody">
+            <tr><td colspan="5" class="text-center py-4" style="color:var(--text-hint)">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="logSummary" style="font-size:11px;color:var(--text-hint);margin-top:8px"></div>
+
+@section Scripts {
+<script>
+    var gateId = @gate.Id;
+    var refreshTimer = null;
+    var antiForgeryToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    function loadLogs() {
+        var date = document.getElementById('dateFilter').value;
+        fetch('/gate/' + gateId + '/log/data?date=' + encodeURIComponent(date))
+            .then(r => r.json())
+            .then(renderLogs)
+            .catch(function () {
+                document.getElementById('liveIndicator').innerHTML = '<i class="bi bi-circle-fill" style="font-size:8px;margin-right:3px"></i>Offline';
+                document.getElementById('liveIndicator').className = 'badge-danger';
+            });
+    }
+
+    function renderLogs(logs) {
+        var tbody = document.getElementById('logTableBody');
+        if (!logs || logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4" style="color:var(--text-hint)">No logs for this date.</td></tr>';
+            document.getElementById('logSummary').textContent = '';
+            return;
+        }
+
+        var processed = logs.filter(function (l) { return l.status === 'PROCESSED'; }).length;
+        var unknown = logs.filter(function (l) { return l.status === 'UNKNOWN'; }).length;
+        var voided = logs.filter(function (l) { return l.status === 'VOID'; }).length;
+
+        document.getElementById('logSummary').textContent =
+            logs.length + ' total · ' + processed + ' processed · ' + unknown + ' unknown · ' + voided + ' voided';
+
+        tbody.innerHTML = logs.map(function (l) {
+            var rowStyle = l.status === 'UNKNOWN' ? 'style="background:var(--warning-bg)"'
+                : l.status === 'VOID' ? 'style="opacity:0.5;text-decoration:line-through"'
+                : '';
+            var badge = l.status === 'PROCESSED' ? '<span class="badge-teal">PROCESSED</span>'
+                : l.status === 'UNKNOWN' ? '<span class="badge-warning">UNKNOWN</span>'
+                : '<span class="badge-gray">VOID</span>';
+            var voidBtn = l.status === 'PROCESSED'
+                ? '<button class="btn btn-sm btn-outline-danger py-0" onclick="voidLog(' + l.id + ', this)" title="Void"><i class="bi bi-x-circle"></i></button>'
+                : '';
+            return '<tr ' + rowStyle + '>'
+                + '<td style="font-family:monospace;font-size:12px;color:var(--text-hint)">' + l.scannedAt + '</td>'
+                + '<td><code style="font-size:11px">' + l.epcTag + '</code></td>'
+                + '<td style="color:var(--text-secondary)">' + (l.itemName || '<span style="color:var(--text-hint)">—</span>') + '</td>'
+                + '<td>' + badge + '</td>'
+                + '<td>' + voidBtn + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    function voidLog(logId, btn) {
+        if (!confirm('Void this entry? Tag status will be reverted to IN_STOCK.')) return;
+        btn.disabled = true;
+        var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        fetch('/gate/log/' + logId + '/void', {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': token }
+        })
+        .then(r => r.json())
+        .then(function (data) {
+            if (data.success) {
+                showToast(data.message, 'success');
+                loadLogs();
+            } else {
+                showToast(data.message, 'error');
+                btn.disabled = false;
+            }
+        });
+    }
+
+    function scheduleRefresh() {
+        refreshTimer = setTimeout(function () {
+            loadLogs();
+            scheduleRefresh();
+        }, 5000);
+    }
+
+    loadLogs();
+    scheduleRefresh();
+</script>
+@Html.AntiForgeryToken()
+}

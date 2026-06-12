@@ -1,0 +1,172 @@
+@using InvenScan.Entity
+@model GateConfig
+@{ ViewData["Title"] = $"Edit Gate — {Model.GateName}"; }
+
+<div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+        <a href="/gate" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+        <h1 class="page-title mb-0">Edit Gate</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <form method="post" action="/gate/@Model.Id/edit">
+            @Html.AntiForgeryToken()
+
+            <div class="is-card mb-3">
+                <div class="mb-3">
+                    <label class="form-label" style="font-size:12px;color:var(--text-secondary)">Gate Name <span class="text-danger">*</span></label>
+                    <input name="GateName" value="@Model.GateName" class="form-control form-control-sm" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" style="font-size:12px;color:var(--text-secondary)">Gate Code <span class="text-danger">*</span></label>
+                    <input name="GateCode" value="@Model.GateCode" class="form-control form-control-sm" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" style="font-size:12px;color:var(--text-secondary)">Location</label>
+                    <select name="LocationId" class="form-select form-select-sm">
+                        <option value="">— No location —</option>
+                        @foreach (var loc in (dynamic)ViewBag.Locations)
+                        {
+                            <option value="@loc.Id" selected="@(Model.LocationId?.ToString() == loc.Id.ToString() ? "selected" : null)">
+                                @loc.LocationCode — @loc.LocationName
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="chkActive"
+                               @(Model.IsActive ? "checked" : "") />
+                        <label class="form-check-label" for="chkActive" style="font-size:13px">Active</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="is-card mb-3">
+                <div class="mb-1" style="font-size:13px;font-weight:600;color:var(--text-primary)">API Key</div>
+                <div style="font-size:11px;color:var(--text-hint);margin-bottom:10px">
+                    Current key for this gate. Use <strong>Regenerate</strong> button to rotate it.
+                </div>
+                <div class="d-flex gap-2 mb-2">
+                    <input type="text" id="apiKeyDisplay" value="••••••••••••••••"
+                           class="form-control form-control-sm" style="font-family:monospace;font-size:12px" readonly />
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleReveal()" style="white-space:nowrap">
+                        <i class="bi bi-eye" id="revealIcon"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyKey()" title="Copy">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-warning" onclick="regenerateKey()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Regenerate Key
+                </button>
+                <div style="font-size:11px;color:var(--text-hint);margin-top:6px">
+                    Regenerating will invalidate the current key immediately.
+                </div>
+            </div>
+
+            <div class="is-card mb-3">
+                <div class="mb-1" style="font-size:13px;font-weight:600;color:var(--text-primary)">Field Mapping</div>
+                <div style="font-size:11px;color:var(--text-hint);margin-bottom:10px">
+                    Map InvenScan fields to your reader's actual field names.
+                </div>
+                <table class="table table-sm mb-2" id="mappingTable" style="font-size:12px">
+                    <thead>
+                        <tr>
+                            <th style="width:40%;color:var(--text-secondary)">InvenScan Field</th>
+                            <th style="color:var(--text-secondary)">Reader Field Name</th>
+                            <th style="width:40px"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="mappingBody"></tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addMappingRow()">
+                    <i class="bi bi-plus-lg me-1"></i>Add Row
+                </button>
+                <input type="hidden" name="FieldMapping" id="fieldMappingInput" value="@Model.FieldMapping" />
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="/gate" class="btn btn-sm btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-sm btn-primary" onclick="return syncMapping()">
+                    <i class="bi bi-check-lg me-1"></i>Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    var currentApiKey = '@Model.ApiKey';
+    var gateId = @Model.Id;
+    var revealed = false;
+    var ourFields = ['epc', 'timestamp', 'antenna', 'rssi', 'reader'];
+
+    function toggleReveal() {
+        var el = document.getElementById('apiKeyDisplay');
+        var icon = document.getElementById('revealIcon');
+        revealed = !revealed;
+        el.value = revealed ? currentApiKey : '••••••••••••••••';
+        icon.className = revealed ? 'bi bi-eye-slash' : 'bi bi-eye';
+    }
+
+    function copyKey() {
+        navigator.clipboard.writeText(currentApiKey).then(function () {
+            showToast('API key copied.', 'success');
+        });
+    }
+
+    function regenerateKey() {
+        if (!confirm('Regenerate API key? The current key will stop working immediately.')) return;
+        fetch('/gate/' + gateId + '/regenerate-key', {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value }
+        })
+        .then(r => r.json())
+        .then(function (data) {
+            if (data.success) {
+                currentApiKey = data.apiKey;
+                document.getElementById('apiKeyDisplay').value = revealed ? currentApiKey : '••••••••••••••••';
+                showToast('API key regenerated.', 'success');
+            } else {
+                showToast(data.message, 'error');
+            }
+        });
+    }
+
+    function addMappingRow(ourVal, readerVal) {
+        var tbody = document.getElementById('mappingBody');
+        var row = document.createElement('tr');
+        row.innerHTML = '<td><select class="form-select form-select-sm mapping-our">'
+            + ourFields.map(f => '<option value="' + f + '"' + (f === ourVal ? ' selected' : '') + '>' + f + '</option>').join('')
+            + '</select></td>'
+            + '<td><input type="text" class="form-control form-control-sm mapping-reader" value="' + (readerVal || '') + '" /></td>'
+            + '<td><button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="this.closest(\'tr\').remove()"><i class="bi bi-x"></i></button></td>';
+        tbody.appendChild(row);
+    }
+
+    function syncMapping() {
+        var obj = {};
+        document.querySelectorAll('#mappingBody tr').forEach(function (row) {
+            var ourField = row.querySelector('.mapping-our')?.value;
+            var readerField = row.querySelector('.mapping-reader')?.value;
+            if (ourField && readerField) obj[ourField] = readerField;
+        });
+        if (Object.keys(obj).length === 0) obj = { epc: 'epc' };
+        document.getElementById('fieldMappingInput').value = JSON.stringify(obj);
+        return true;
+    }
+
+    (function () {
+        try {
+            var parsed = JSON.parse('@Html.Raw(Model.FieldMapping.Replace("'", "\\'"))');
+            Object.entries(parsed).forEach(function ([k, v]) { addMappingRow(k, v); });
+        } catch (e) {
+            addMappingRow('epc', 'epc');
+        }
+    })();
+</script>
+}

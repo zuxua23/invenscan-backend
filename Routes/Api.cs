@@ -31,6 +31,11 @@ public static class Api
     public const string SearchItem = "api/search-item";
     public const string SearchItemByCode = "api/search-item/{code}";
 
+    public const string StockOut = "api/stockout";
+    public const string StockOutBulkInfo = "api/stockout/bulk-info";
+
+    public const string GateStockOut = "api/gate/stockout";
+
     public const string User = "api/user";
 
     public const string Ping = "api/ping";

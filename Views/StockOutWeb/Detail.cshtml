@@ -1,0 +1,107 @@
+@using InvenScan.Entity
+@model StockOut
+@{ ViewData["Title"] = $"Stock Out {Model.DocNumber}"; }
+
+<div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+        <a href="/stockout" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="page-title mb-0">Stock Out Detail</h1>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="detail-header">
+        <div class="detail-header-item">
+            <div class="dh-label">Doc Number</div>
+            <div class="dh-value"><code>@Model.DocNumber</code></div>
+        </div>
+        <div class="detail-header-item">
+            <div class="dh-label">Location</div>
+            <div class="dh-value">
+                @(Model.Location != null
+                    ? $"{Model.Location.LocationCode} — {Model.Location.LocationName}"
+                    : "—")
+            </div>
+        </div>
+        <div class="detail-header-item">
+            <div class="dh-label">Status</div>
+            <div class="dh-value">
+                @if (Model.Status == "SYNCED")
+                {
+                    <span class="badge-teal">SYNCED</span>
+                }
+                else
+                {
+                    <span class="badge-warning">PENDING</span>
+                }
+            </div>
+        </div>
+        <div class="detail-header-item">
+            <div class="dh-label">Total Items</div>
+            <div class="dh-value">@Model.Details.Count</div>
+        </div>
+        <div class="detail-header-item">
+            <div class="dh-label">Notes</div>
+            <div class="dh-value is-hint">@(string.IsNullOrWhiteSpace(Model.Notes) ? "—" : Model.Notes)</div>
+        </div>
+        <div class="detail-header-item">
+            <div class="dh-label">Created By</div>
+            <div class="dh-value is-hint">@Model.CreatedBy</div>
+        </div>
+        <div class="detail-header-item">
+            <div class="dh-label">Created</div>
+            <div class="dh-value is-hint">@Model.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+        </div>
+    </div>
+</div>
+
+<div class="is-card">
+    <table id="detailTable" class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>Scan Type</th>
+                <th>Scanned Code</th>
+                <th>EPC Tag</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{var idx = 1;}
+            @foreach (var d in Model.Details)
+            {
+                <tr>
+                    <td style="color:var(--text-hint);font-size:12px">@idx</td>
+                    <td><code>@(d.Item?.ItemCode ?? "—")</code></td>
+                    <td>@(d.Item?.ItemName ?? "—")</td>
+                    <td>
+                        @if (d.ScanType == "RFID")
+                        {
+                            <span class="badge-teal">RFID</span>
+                        }
+                        else
+                        {
+                            <span class="badge-navy">BARCODE</span>
+                        }
+                    </td>
+                    <td><code style="font-size:11px;color:var(--text-hint)">@d.ScannedCode</code></td>
+                    <td><code style="font-size:11px;color:var(--text-hint)">@(d.Tag?.EpcTag ?? "—")</code></td>
+                    <td style="color:var(--text-hint);font-size:12px">@d.CreatedAt.ToLocalTime().ToString("HH:mm:ss")</td>
+                </tr>
+                idx++;
+            }
+            @if (!Model.Details.Any())
+            {
+                <tr><td colspan="7" class="text-center py-4" style="color:var(--text-hint)">No items in this document.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>$(document).ready(function () { $('#detailTable').DataTable({ paging: false }); });</script>
+}

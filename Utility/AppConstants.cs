@@ -53,6 +53,19 @@ public static class AppConstants
         public const string Barcode = "BARCODE";
     }
 
+    public static class StockOutStatus
+    {
+        public const string Pending = "PENDING";
+        public const string Synced = "SYNCED";
+    }
+
+    public static class GateLogStatus
+    {
+        public const string Processed = "PROCESSED";
+        public const string Unknown = "UNKNOWN";
+        public const string Void = "VOID";
+    }
+
     public static class AuthSchemes
     {
         public const string Cookie = "CookieAuth";

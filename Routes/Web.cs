@@ -11,4 +11,6 @@ public static class Web
     public const string StockPrep = "stock-prep";
     public const string Users = "users";
     public const string Transactions = "transactions";
+    public const string StockOut = "stockout";
+    public const string Gate = "gate";
 }
