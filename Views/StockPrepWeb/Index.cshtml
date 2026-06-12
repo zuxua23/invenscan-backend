@@ -1,14 +1,19 @@
 @using InvenScan.DTO.Response
+@using InvenScan.Entity
 @model List<StockPrepResponse>
-@{ ViewData["Title"] = "Stock Prep"; }
+@{
+    ViewData["Title"] = "Stock Prep";
+    var items = ViewBag.Items as List<Item> ?? new List<Item>();
+    var locations = ViewBag.Locations as List<Location> ?? new List<Location>();
+}
 
 <div class="page-header">
     <h1 class="page-title">Stock Prep</h1>
     @if (User.IsInRole("ADMIN"))
     {
-        <a asp-controller="StockPrepWeb" asp-action="Create" class="btn btn-primary btn-sm">
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createPrepModal">
             <i class="bi bi-plus-lg me-1"></i>Create Picking List
-        </a>
+        </button>
     }
 </div>
 
@@ -60,6 +65,81 @@
     </table>
 </div>
 
+@if (User.IsInRole("ADMIN"))
+{
+    <!-- Create Picking List Modal -->
+    <div class="modal fade" id="createPrepModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header is-dark">
+                    <h5 class="modal-title"><i class="bi bi-list-check me-2"></i>Create Picking List</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="createPrepForm" action="/stock-prep/create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Notes <span style="color:var(--text-hint);font-weight:400">(optional)</span></label>
+                            <input name="Notes" class="form-control" placeholder="e.g. Shipment order for June 2026" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Items <span style="color:var(--danger)">*</span></label>
+                            <table class="table table-sm mb-1" id="prepItemsTable">
+                                <thead>
+                                    <tr style="font-size:12px;color:var(--text-hint)">
+                                        <th>Item</th>
+                                        <th>Location</th>
+                                        <th style="width:90px">Qty</th>
+                                        <th style="width:40px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="prepItemsBody">
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addPrepRow()">
+                                <i class="bi bi-plus me-1"></i>Add Item
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check-lg me-1"></i>Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
 @section Scripts {
-    <script>$(document).ready(function () { $('#prepTable').DataTable({ order: [[5, 'desc']], pageLength: 25 }); });</script>
+<script>
+    $(document).ready(function () { $('#prepTable').DataTable({ order: [[5, 'desc']], pageLength: 25 }); });
+
+    bindModalForm('createPrepForm', 'createPrepModal', function () {
+        document.getElementById('prepItemsBody').innerHTML = '';
+        document.querySelector('[name="Notes"]').value = '';
+        addPrepRow();
+    });
+
+    var itemOptions = '@Html.Raw(string.Join("", items.Select(i => $"<option value=\\\"{i.Id}\\\">{i.ItemCode} — {i.ItemName}</option>")))';
+    var locationOptions = '@Html.Raw(string.Join("", locations.Select(l => $"<option value=\\\"{l.Id}\\\">{l.LocationCode} — {l.LocationName}</option>")))';
+    var prepRowIndex = 0;
+
+    function addPrepRow() {
+        var idx = prepRowIndex++;
+        var row = document.createElement('tr');
+        row.innerHTML =
+            '<td><select name="Items[' + idx + '].ItemId" class="form-select form-select-sm" required>' +
+            '<option value="">-- Item --</option>' + itemOptions + '</select></td>' +
+            '<td><select name="Items[' + idx + '].LocationId" class="form-select form-select-sm" required>' +
+            '<option value="">-- Location --</option>' + locationOptions + '</select></td>' +
+            '<td><input name="Items[' + idx + '].RequestedQty" type="number" min="1" value="1" class="form-control form-control-sm" required /></td>' +
+            '<td><button type="button" class="btn btn-sm btn-outline-danger py-0" onclick="this.closest(\'tr\').remove()"><i class="bi bi-x"></i></button></td>';
+        document.getElementById('prepItemsBody').appendChild(row);
+    }
+
+    document.getElementById('createPrepModal').addEventListener('show.bs.modal', function () {
+        if (document.getElementById('prepItemsBody').children.length === 0) addPrepRow();
+    });
+</script>
 }

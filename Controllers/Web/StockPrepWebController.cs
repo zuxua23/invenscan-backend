@@ -28,38 +28,36 @@ public class StockPrepWebController : Controller
     public async Task<IActionResult> Index()
     {
         var result = await _stockPrepService.GetOpenDocumentsAsync();
+        ViewBag.Items = await _context.Items.Where(i => !i.IsDelete).OrderBy(i => i.ItemCode).ToListAsync();
+        ViewBag.Locations = await _context.Locations.Where(l => !l.IsDelete).OrderBy(l => l.LocationCode).ToListAsync();
         return View(result.Data ?? new());
     }
 
     [HttpGet("create")]
     [Authorize(AuthenticationSchemes = AppConstants.AuthSchemes.Cookie, Roles = "ADMIN")]
-    public async Task<IActionResult> Create()
-    {
-        ViewData["Items"] = await _context.Items.Where(i => !i.IsDelete).OrderBy(i => i.ItemCode).ToListAsync();
-        ViewData["Locations"] = await _context.Locations.Where(l => !l.IsDelete).OrderBy(l => l.LocationCode).ToListAsync();
-        return View();
-    }
+    public IActionResult Create() => RedirectToAction(nameof(Index));
 
     [HttpPost("create")]
     [ValidateAntiForgeryToken]
     [Authorize(AuthenticationSchemes = AppConstants.AuthSchemes.Cookie, Roles = "ADMIN")]
     public async Task<IActionResult> Create(StockPrepCreateRequest request)
     {
+        var isAjax = Request.Headers.ContainsKey("X-Requested-With");
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "admin";
         var result = await _stockPrepService.CreateAsync(request, userId);
 
         if (!result.Success)
         {
+            if (isAjax) return Json(new { success = false, message = result.Message });
             TempData["Error"] = result.Message;
-            ViewData["Items"] = await _context.Items.Where(i => !i.IsDelete).OrderBy(i => i.ItemCode).ToListAsync();
-            ViewData["Locations"] = await _context.Locations.Where(l => !l.IsDelete).OrderBy(l => l.LocationCode).ToListAsync();
-            return View(request);
+            return RedirectToAction(nameof(Index));
         }
 
         await _activityLogService.LogAsync(userId, userId, "CREATE", "StockPrep",
             $"Created picking list {result.Data?.DocNumber}",
             ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString());
 
+        if (isAjax) return Json(new { success = true, message = $"Picking list {result.Data?.DocNumber} created." });
         TempData["Success"] = $"Picking list {result.Data?.DocNumber} created.";
         return RedirectToAction(nameof(Index));
     }

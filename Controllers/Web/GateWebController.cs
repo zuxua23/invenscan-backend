@@ -31,38 +31,39 @@ public class GateWebController : Controller
             .OrderBy(g => g.GateCode)
             .ToListAsync();
 
+        await LoadLocationsAsync();
+        ViewBag.NewApiKey = _gateService.GenerateApiKey();
         return View(gates);
     }
 
     [HttpGet("create")]
-    public async Task<IActionResult> Create()
-    {
-        await LoadLocationsAsync();
-        var model = new GateConfig { ApiKey = _gateService.GenerateApiKey() };
-        return View(model);
-    }
+    public IActionResult Create() => RedirectToAction(nameof(Index));
 
     [HttpPost("create")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(GateConfig model)
     {
+        var isAjax = Request.Headers.ContainsKey("X-Requested-With");
+
         if (string.IsNullOrWhiteSpace(model.GateName) || string.IsNullOrWhiteSpace(model.GateCode))
         {
+            if (isAjax) return Json(new { success = false, message = "Gate Name and Gate Code are required." });
             TempData["Error"] = "Gate Name and Gate Code are required.";
-            await LoadLocationsAsync();
-            return View(model);
+            return RedirectToAction(nameof(Index));
         }
 
         var duplicate = await _context.GateConfigs.AnyAsync(g => g.GateCode == model.GateCode);
         if (duplicate)
         {
+            if (isAjax) return Json(new { success = false, message = $"Gate Code '{model.GateCode}' already exists." });
             TempData["Error"] = $"Gate Code '{model.GateCode}' already exists.";
-            await LoadLocationsAsync();
-            return View(model);
+            return RedirectToAction(nameof(Index));
         }
 
         model.ApiKey = string.IsNullOrWhiteSpace(model.ApiKey)
             ? _gateService.GenerateApiKey()
             : model.ApiKey;
+        model.FieldMapping = string.IsNullOrWhiteSpace(model.FieldMapping) ? "{\"epc\":\"epc\"}" : model.FieldMapping;
         model.CreatedAt = DateTime.UtcNow;
 
         _context.GateConfigs.Add(model);
@@ -73,6 +74,7 @@ public class GateWebController : Controller
             $"Created gate: {model.GateName} ({model.GateCode})",
             ipAddress: HttpContext.Connection.RemoteIpAddress?.ToString());
 
+        if (isAjax) return Json(new { success = true, message = $"Gate '{model.GateName}' created successfully." });
         TempData["Success"] = $"Gate '{model.GateName}' created successfully.";
         return RedirectToAction(nameof(Index));
     }
