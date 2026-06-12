@@ -78,6 +78,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.SessionCode).IsUnique();
             entity.Property(e => e.SessionCode).HasMaxLength(50).IsRequired();
             entity.Property(e => e.Status).HasMaxLength(20);
+            entity.HasOne(e => e.Location).WithMany().HasForeignKey(e => e.LocationId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<StockTakingDetail>(entity =>

@@ -12,11 +12,13 @@ namespace InvenScan.Controllers.Web;
 public class StockTakingWebController : Controller
 {
     private readonly IStockTakingService _stockTakingService;
+    private readonly ILocationService _locationService;
     private readonly IActivityLogService _activityLogService;
 
-    public StockTakingWebController(IStockTakingService stockTakingService, IActivityLogService activityLogService)
+    public StockTakingWebController(IStockTakingService stockTakingService, ILocationService locationService, IActivityLogService activityLogService)
     {
         _stockTakingService = stockTakingService;
+        _locationService = locationService;
         _activityLogService = activityLogService;
     }
 
@@ -24,6 +26,8 @@ public class StockTakingWebController : Controller
     public async Task<IActionResult> Index()
     {
         var result = await _stockTakingService.GetAllSessionsAsync();
+        var locationsResult = await _locationService.GetAllLocationsAsync();
+        ViewBag.Locations = locationsResult.Data ?? new();
         return View(result.Data ?? new());
     }
 
@@ -42,12 +46,12 @@ public class StockTakingWebController : Controller
     [HttpPost("create")]
     [ValidateAntiForgeryToken]
     [Authorize(AuthenticationSchemes = AppConstants.AuthSchemes.Cookie, Roles = "ADMIN")]
-    public async Task<IActionResult> Create(string remark)
+    public async Task<IActionResult> Create(int locationId, string remark)
     {
         var isAjax = Request.Headers.ContainsKey("X-Requested-With");
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "admin";
         var result = await _stockTakingService.CreateSessionAsync(
-            new StockTakingCreateRequest { Remark = remark ?? "" }, userId);
+            new StockTakingCreateRequest { LocationId = locationId, Remark = remark ?? "" }, userId);
 
         if (!result.Success)
         {

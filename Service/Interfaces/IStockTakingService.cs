@@ -7,7 +7,7 @@ public interface IStockTakingService
 {
     Task<ApiResponse<StockTakingResponse>> CreateSessionAsync(StockTakingCreateRequest request, string createdBy);
     Task<ApiResponse<List<StockTakingResponse>>> GetAllSessionsAsync();
-    Task<ApiResponse<StockTakingResponse>> GetActiveSessionAsync();
+    Task<ApiResponse<StockTakingResponse>> GetActiveSessionAsync(int locationId);
     Task<ApiResponse<List<StockTakingDetailResponse>>> GetSessionTagsAsync(int sttId);
     Task<ApiResponse<List<TagResponse>>> GetAvailableTagsAsync(int sttId);
     Task<ApiResponse<StockTakingResponse>> OperatorSubmitAsync(StockTakingOperatorSubmitRequest request, string operatorId);

@@ -17,19 +17,29 @@ public class StockTakingService : IStockTakingService
         _context = context;
     }
 
+    /// <summary>Creates a new stock taking session for the given location.</summary>
     public async Task<ApiResponse<StockTakingResponse>> CreateSessionAsync(StockTakingCreateRequest request, string createdBy)
     {
         try
         {
-            var hasOpen = await _context.StockTakings.AnyAsync(s => s.Status == AppConstants.StockTakingStatus.Open);
-            if (hasOpen)
-                return ApiResponse<StockTakingResponse>.Fail("There is already an active stock taking session. Close it before creating a new one.");
+            if (request.LocationId <= 0)
+                return ApiResponse<StockTakingResponse>.Fail("Location is required.");
+
+            var locationExists = await _context.Locations.AnyAsync(l => l.Id == request.LocationId);
+            if (!locationExists)
+                return ApiResponse<StockTakingResponse>.Fail("Location not found.");
+
+            var hasOpenAtLocation = await _context.StockTakings
+                .AnyAsync(s => s.Status == AppConstants.StockTakingStatus.Open && s.LocationId == request.LocationId);
+            if (hasOpenAtLocation)
+                return ApiResponse<StockTakingResponse>.Fail("This location already has an active stock taking session.");
 
             var sessionCode = await GenerateSessionCodeAsync();
 
             var session = new StockTaking
             {
                 SessionCode = sessionCode,
+                LocationId = request.LocationId,
                 Remark = request.Remark,
                 Status = AppConstants.StockTakingStatus.Open,
                 CreatedBy = createdBy
@@ -39,7 +49,7 @@ public class StockTakingService : IStockTakingService
             await _context.SaveChangesAsync();
 
             var inStockTags = await _context.Tags
-                .Where(t => t.Status == AppConstants.TagStatus.InStock)
+                .Where(t => t.Status == AppConstants.TagStatus.InStock && t.LocationId == request.LocationId)
                 .ToListAsync();
 
             var details = inStockTags.Select(t => new StockTakingDetail
@@ -53,7 +63,8 @@ public class StockTakingService : IStockTakingService
             await _context.StockTakingDetails.AddRangeAsync(details);
             await _context.SaveChangesAsync();
 
-            return ApiResponse<StockTakingResponse>.Ok(MapToResponse(session, details.Count, 0, 0), "Session created successfully.");
+            var location = await _context.Locations.FindAsync(request.LocationId);
+            return ApiResponse<StockTakingResponse>.Ok(MapToResponse(session, location!, details.Count, 0, 0), "Session created successfully.");
         }
         catch (Exception)
         {
@@ -61,17 +72,20 @@ public class StockTakingService : IStockTakingService
         }
     }
 
+    /// <summary>Gets all stock taking sessions with location info.</summary>
     public async Task<ApiResponse<List<StockTakingResponse>>> GetAllSessionsAsync()
     {
         try
         {
             var sessions = await _context.StockTakings
                 .Include(s => s.Details)
+                .Include(s => s.Location)
                 .OrderByDescending(s => s.CreatedAt)
                 .ToListAsync();
 
             var responses = sessions.Select(s => MapToResponse(
                 s,
+                s.Location,
                 s.Details.Count,
                 s.Details.Count(d => d.Action == AppConstants.StockTakingAction.Scan),
                 s.Details.Count(d => d.Action == AppConstants.StockTakingAction.Missing)
@@ -85,19 +99,22 @@ public class StockTakingService : IStockTakingService
         }
     }
 
-    public async Task<ApiResponse<StockTakingResponse>> GetActiveSessionAsync()
+    /// <summary>Gets the active (open) session for a specific location.</summary>
+    public async Task<ApiResponse<StockTakingResponse>> GetActiveSessionAsync(int locationId)
     {
         try
         {
             var session = await _context.StockTakings
                 .Include(s => s.Details)
-                .FirstOrDefaultAsync(s => s.Status == AppConstants.StockTakingStatus.Open);
+                .Include(s => s.Location)
+                .FirstOrDefaultAsync(s => s.Status == AppConstants.StockTakingStatus.Open && s.LocationId == locationId);
 
             if (session == null)
-                return ApiResponse<StockTakingResponse>.Fail("No active stock taking session.");
+                return ApiResponse<StockTakingResponse>.Fail("No active stock taking session at this location.");
 
             return ApiResponse<StockTakingResponse>.Ok(MapToResponse(
                 session,
+                session.Location,
                 session.Details.Count,
                 session.Details.Count(d => d.Action == AppConstants.StockTakingAction.Scan),
                 session.Details.Count(d => d.Action == AppConstants.StockTakingAction.Missing)
@@ -109,6 +126,7 @@ public class StockTakingService : IStockTakingService
         }
     }
 
+    /// <summary>Gets all tags and their scan status for a session.</summary>
     public async Task<ApiResponse<List<StockTakingDetailResponse>>> GetSessionTagsAsync(int sttId)
     {
         try
@@ -146,6 +164,7 @@ public class StockTakingService : IStockTakingService
         }
     }
 
+    /// <summary>Gets IN_STOCK tags not yet included in the session.</summary>
     public async Task<ApiResponse<List<TagResponse>>> GetAvailableTagsAsync(int sttId)
     {
         try
@@ -180,12 +199,14 @@ public class StockTakingService : IStockTakingService
         }
     }
 
+    /// <summary>Submits operator scan results from handheld device.</summary>
     public async Task<ApiResponse<StockTakingResponse>> OperatorSubmitAsync(StockTakingOperatorSubmitRequest request, string operatorId)
     {
         try
         {
             var session = await _context.StockTakings
                 .Include(s => s.Details)
+                .Include(s => s.Location)
                 .FirstOrDefaultAsync(s => s.Id == request.SttId && s.Status == AppConstants.StockTakingStatus.Open);
 
             if (session == null)
@@ -211,6 +232,7 @@ public class StockTakingService : IStockTakingService
 
             return ApiResponse<StockTakingResponse>.Ok(MapToResponse(
                 session,
+                session.Location,
                 session.Details.Count,
                 session.Details.Count(d => d.Action == AppConstants.StockTakingAction.Scan),
                 session.Details.Count(d => d.Action == AppConstants.StockTakingAction.Missing)
@@ -222,12 +244,14 @@ public class StockTakingService : IStockTakingService
         }
     }
 
+    /// <summary>Closes an active stock taking session.</summary>
     public async Task<ApiResponse<StockTakingResponse>> CloseSessionAsync(int sttId, string closedBy)
     {
         try
         {
             var session = await _context.StockTakings
                 .Include(s => s.Details)
+                .Include(s => s.Location)
                 .FirstOrDefaultAsync(s => s.Id == sttId && s.Status == AppConstants.StockTakingStatus.Open);
 
             if (session == null)
@@ -240,6 +264,7 @@ public class StockTakingService : IStockTakingService
 
             return ApiResponse<StockTakingResponse>.Ok(MapToResponse(
                 session,
+                session.Location,
                 session.Details.Count,
                 session.Details.Count(d => d.Action == AppConstants.StockTakingAction.Scan),
                 session.Details.Count(d => d.Action == AppConstants.StockTakingAction.Missing)
@@ -258,10 +283,13 @@ public class StockTakingService : IStockTakingService
         return $"{prefix}{(count + 1):D3}";
     }
 
-    private static StockTakingResponse MapToResponse(StockTaking s, int total, int scanned, int missing) => new()
+    private static StockTakingResponse MapToResponse(StockTaking s, Location location, int total, int scanned, int missing) => new()
     {
         Id = s.Id,
         SessionCode = s.SessionCode,
+        LocationId = s.LocationId,
+        LocationCode = location?.LocationCode ?? string.Empty,
+        LocationName = location?.LocationName ?? string.Empty,
         Remark = s.Remark,
         Status = s.Status,
         CreatedBy = s.CreatedBy,

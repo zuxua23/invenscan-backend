@@ -1,6 +1,9 @@
 @using InvenScan.DTO.Response
 @model List<StockTakingResponse>
-@{ ViewData["Title"] = "Stock Taking"; }
+@{
+    ViewData["Title"] = "Stock Taking";
+    var locations = ViewBag.Locations as List<LocationResponse> ?? new List<LocationResponse>();
+}
 
 <div class="page-header">
     <h1 class="page-title">Stock Taking</h1>
@@ -17,6 +20,7 @@
         <thead>
             <tr>
                 <th>Session Code</th>
+                <th>Location</th>
                 <th>Remark</th>
                 <th>Status</th>
                 <th>Total</th>
@@ -31,6 +35,10 @@
             {
                 <tr>
                     <td><code>@s.SessionCode</code></td>
+                    <td style="font-size:12px">
+                        <span style="color:var(--text-hint)">@s.LocationCode</span>
+                        <span style="color:var(--text-secondary)"> — @s.LocationName</span>
+                    </td>
                     <td style="color:var(--text-secondary)">@s.Remark</td>
                     <td>
                         @if (s.Status == "OPEN") { <span class="badge-teal">OPEN</span> }
@@ -74,6 +82,16 @@
                 <form id="createSttForm" action="/stock-taking/create" method="post">
                     @Html.AntiForgeryToken()
                     <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Location <span style="color:var(--danger)">*</span></label>
+                            <select name="locationId" class="form-select" required>
+                                <option value="">-- Select Location --</option>
+                                @foreach (var loc in locations)
+                                {
+                                    <option value="@loc.Id">@loc.LocationCode — @loc.LocationName</option>
+                                }
+                            </select>
+                        </div>
                         <div class="mb-0">
                             <label class="form-label">Session Remark <span style="color:var(--text-hint);font-weight:400">(optional)</span></label>
                             <input name="remark" class="form-control" placeholder="e.g. Monthly stock check Q1 2026" />

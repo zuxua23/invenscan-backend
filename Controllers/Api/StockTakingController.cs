@@ -40,11 +40,14 @@ public class StockTakingController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>Get the currently active (open) session.</summary>
+    /// <summary>Get the currently active (open) session for a specific location.</summary>
     [HttpGet("active")]
-    public async Task<IActionResult> GetActive()
+    public async Task<IActionResult> GetActive([FromQuery] int locationId)
     {
-        var response = await _stockTakingService.GetActiveSessionAsync();
+        if (locationId <= 0)
+            return BadRequest(new { success = false, message = "locationId is required." });
+
+        var response = await _stockTakingService.GetActiveSessionAsync(locationId);
         if (!response.Success)
             return NotFound(response);
 

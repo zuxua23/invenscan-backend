@@ -300,6 +300,9 @@ namespace InvenScan.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("LocationId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Remark")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -315,6 +318,8 @@ namespace InvenScan.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LocationId");
 
                     b.HasIndex("SessionCode")
                         .IsUnique();
@@ -514,6 +519,17 @@ namespace InvenScan.Migrations
                     b.Navigation("Location");
 
                     b.Navigation("StockPrep");
+                });
+
+            modelBuilder.Entity("InvenScan.Entity.StockTaking", b =>
+                {
+                    b.HasOne("InvenScan.Entity.Location", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Location");
                 });
 
             modelBuilder.Entity("InvenScan.Entity.StockTakingDetail", b =>
