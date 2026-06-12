@@ -579,16 +579,11 @@ div.dataTables_wrapper div.dataTables_paginate {
   box-shadow: var(--card-shadow);
 }
 .login-logo {
-  width: 48px;
-  height: 48px;
-  background: var(--navy);
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
 }
-.login-logo i { color: var(--teal); font-size: 22px; }
 .login-title {
   text-align: center;
   font-size: 18px;
