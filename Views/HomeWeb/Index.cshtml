@@ -8,46 +8,64 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-6 col-xl-2">
+    <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-card">
-            <div class="kpi-label">Total Items</div>
-            <div class="kpi-value is-teal">@Model.TotalItems</div>
-            <div class="kpi-sub"><i class="bi bi-box-seam me-1"></i>Active items</div>
+            <div class="kpi-icon ic-teal"><i class="bi bi-box-seam"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-label">Total Items</div>
+                <div class="kpi-value is-teal">@Model.TotalItems</div>
+                <div class="kpi-sub">Active items</div>
+            </div>
         </div>
     </div>
-    <div class="col-6 col-xl-2">
+    <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-card">
-            <div class="kpi-label">Locations</div>
-            <div class="kpi-value is-teal">@Model.TotalLocations</div>
-            <div class="kpi-sub"><i class="bi bi-geo-alt me-1"></i>Active locations</div>
+            <div class="kpi-icon ic-teal"><i class="bi bi-geo-alt"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-label">Locations</div>
+                <div class="kpi-value is-teal">@Model.TotalLocations</div>
+                <div class="kpi-sub">Active locations</div>
+            </div>
         </div>
     </div>
-    <div class="col-6 col-xl-2">
+    <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-card">
-            <div class="kpi-label">Registered Tags</div>
-            <div class="kpi-value">@Model.TotalTags</div>
-            <div class="kpi-sub"><i class="bi bi-tag me-1"></i>RFID / Barcode</div>
+            <div class="kpi-icon ic-navy"><i class="bi bi-tag"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-label">Registered Tags</div>
+                <div class="kpi-value">@Model.TotalTags</div>
+                <div class="kpi-sub">RFID / Barcode</div>
+            </div>
         </div>
     </div>
-    <div class="col-6 col-xl-2">
+    <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-card">
-            <div class="kpi-label">Stock Taking</div>
-            <div class="kpi-value is-warn">@Model.ActiveStockTakingSessions</div>
-            <div class="kpi-sub"><i class="bi bi-clipboard-check me-1"></i>Active sessions</div>
+            <div class="kpi-icon ic-warn"><i class="bi bi-clipboard-check"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-label">Stock Taking</div>
+                <div class="kpi-value is-warn">@Model.ActiveStockTakingSessions</div>
+                <div class="kpi-sub">Active sessions</div>
+            </div>
         </div>
     </div>
-    <div class="col-6 col-xl-2">
+    <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-card">
-            <div class="kpi-label">Stock Prep</div>
-            <div class="kpi-value is-warn">@Model.PendingStockPrepDocs</div>
-            <div class="kpi-sub"><i class="bi bi-bag-check me-1"></i>Pending docs</div>
+            <div class="kpi-icon ic-warn"><i class="bi bi-bag-check"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-label">Stock Prep</div>
+                <div class="kpi-value is-warn">@Model.PendingStockPrepDocs</div>
+                <div class="kpi-sub">Pending docs</div>
+            </div>
         </div>
     </div>
-    <div class="col-6 col-xl-2">
+    <div class="col-6 col-md-4 col-xl-2">
         <div class="kpi-card">
-            <div class="kpi-label">Active Users</div>
-            <div class="kpi-value is-teal">@Model.TotalUsers</div>
-            <div class="kpi-sub"><i class="bi bi-people me-1"></i>System users</div>
+            <div class="kpi-icon ic-teal"><i class="bi bi-people"></i></div>
+            <div class="kpi-body">
+                <div class="kpi-label">Active Users</div>
+                <div class="kpi-value is-teal">@Model.TotalUsers</div>
+                <div class="kpi-sub">System users</div>
+            </div>
         </div>
     </div>
 </div>
